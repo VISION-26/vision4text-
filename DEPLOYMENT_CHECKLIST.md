@@ -1,0 +1,24 @@
+# Final production deployment checklist
+
+- [ ] `evt-clip-v2-models` exists in Modal environment `main`.
+- [ ] `/models/production` contains the verified runtime, ten specialists, Stage-3 checkpoint and OpenCLIP weight.
+- [ ] Preferably `/models/production/category_validation_centroids.npz` exists; otherwise confirm the UI labels the portable OpenCLIP fallback appropriately.
+- [ ] Modal Secret `evt-clip-v2-secrets` contains a 32+ character `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, optional `ADMIN_NAME`, and preferably a separate `EVIDENCE_SIGNING_SECRET`.
+- [ ] Keep production `ALLOW_PUBLIC_REGISTRATION=false`.
+- [ ] Run `py -m modal deploy -e main .\modal_deploy.py`.
+- [ ] `/health` returns ready / version 2.1.0 / CPU / `modal_cpu_queue`.
+- [ ] Correct-category known-good image completes.
+- [ ] Correct-category known-defective image completes with backend heatmap/mask/overlay.
+- [ ] Bottle-selected + Pill image shows a centered category safety popup and no Bottle heatmap/mask/overlay.
+- [ ] Clearly unrelated image is rejected when confidently out-of-scope; category-unconfirmed inputs are stopped and ask for a corrected input/category.
+- [ ] Blank/fully clipped image is rejected; lower-confidence image-quality warnings become review-only.
+- [ ] Second same-category scan reports warm/partial-warm cache state and measured timings.
+- [ ] Dashboard Today / 7 Days / 30 Days / 1 Year / All Time filters work and selected-range CSV downloads.
+- [ ] History persists after reload and older 100-record batches can be loaded.
+- [ ] PDF export works.
+- [ ] Evidence ZIP works and contains `manifest.sha256.json` + `manifest.signature.json`.
+- [ ] Verify one evidence ZIP with `tools/verify_evidence_bundle.py` and the evidence-signing secret.
+- [ ] Admin users/audit/system-health pages load.
+- [ ] Admin `Download DB Backup` returns an integrity-valid SQLite file.
+- [ ] Reload/restart confirms SQLite/uploads/reports persist.
+- [ ] After any model Volume checkpoint/manifest change, redeploy to create a fresh CPU Memory Snapshot.

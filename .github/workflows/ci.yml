@@ -1,0 +1,30 @@
+name: EVT-CLIP Production Validation
+
+on: [push, pull_request]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm --prefix frontend ci --no-audit --no-fund
+      - run: npm --prefix frontend run build
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m compileall -q backend evaluation tools modal_deploy.py
+      - run: |
+          python tools/content_quality_gate.py
+          python tools/frontend_source_check.py
+          python tools/validate_release.py
+      - run: pip install --disable-pip-version-check numpy pillow opencv-python-headless
+      - run: python tools/hybrid_cv_smoke.py
+
+      - run: docker compose -f docker-compose.prod.yml config

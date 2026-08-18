@@ -1,0 +1,102 @@
+{
+  "schema_version": "evtclip-v2-production-release-validation-v1",
+  "project_version": "2.1.0",
+  "generated_at_utc": "2026-08-15T01:21:43.719657+00:00",
+  "release_name": "EVT_CLIP_V2_PRODUCTION_HARDENED_HIGH_SPEED_FINAL",
+  "checks": {
+    "python_ast": {
+      "status": "pass",
+      "files": 60,
+      "failures": []
+    },
+    "python_compileall": {
+      "status": "pass",
+      "note": "Ran successfully before release cleanup; generated __pycache__ removed from artifact."
+    },
+    "jsx_typescript_parser": {
+      "status": "pass",
+      "files": 40,
+      "failures": 0
+    },
+    "frontend_relative_imports": {
+      "status": "pass",
+      "imports_checked": 88,
+      "missing": []
+    },
+    "package_lock_root_contract": {
+      "status": "pass"
+    },
+    "release_guard": {
+      "status": "pass",
+      "command": "python tools/validate_release.py"
+    },
+    "compose_yaml": {
+      "status": "pass",
+      "services": [
+        "backend",
+        "caddy",
+        "frontend"
+      ]
+    },
+    "cpu_only_modal": {
+      "status": "pass",
+      "gpu_resource_requested": false,
+      "cuda_hidden": true
+    },
+    "modal_async_queue_submission": {
+      "status": "pass"
+    },
+    "memory_snapshot_worker": {
+      "status": "pass"
+    },
+    "warm_specialist_cache": {
+      "status": "pass"
+    },
+    "wrong_category_fail_closed": {
+      "status": "pass",
+      "derived_visuals_on_rejection": false
+    },
+    "image_quality_gate_smoke": {
+      "status": "pass"
+    },
+    "signed_evidence_verifier_smoke": {
+      "status": "pass",
+      "tamper_detected": true
+    },
+    "database_backup_smoke": {
+      "status": "pass",
+      "integrity_check": "ok"
+    },
+    "pdf_generation_smoke": {
+      "status": "pass",
+      "valid_pdf_bytes_tested": 5300,
+      "invalid_pdf_bytes_tested": 3699
+    },
+    "benchmark_gate_synthetic_smoke": {
+      "status": "pass",
+      "note": "Both post-process and Stage2/Stage3 fusion gates executed and produced holdout-gated recommendations on synthetic proof data."
+    },
+    "secret_scan": {
+      "status": "pass",
+      "note": "No .env or private key is shipped; .env.example contains placeholders only."
+    },
+    "artifact_cleanup": {
+      "status": "pass",
+      "node_modules_included": false,
+      "pycache_included": false
+    }
+  },
+  "recorded_benchmarks_unchanged": {
+    "known_product_average_pixel_f1_percent": 80.17,
+    "unseen_loco_average_pixel_f1_percent": 51.85,
+    "new_unseen_benchmark_claimed": false,
+    "policy": "No production threshold/blend override is enabled until a real calibration + untouched holdout gate passes."
+  },
+  "runtime_limitations_not_hidden": [
+    "The ~4.3 GB verified production model Volume is not mounted in this build environment, so full real-model CPU inference was not executed here.",
+    "The package was not deployed into the user Modal workspace from this environment; live endpoint smoke testing remains required.",
+    "Exact cold/warm CPU latency and peak RAM must be measured after deployment; every production scan now records per-stage timing and worker cache state.",
+    "The exact category_validation_centroids.npz cache is not embedded in this small web package. A builder is included; until installed, the worker uses the conservative OpenCLIP prompt-ensemble fallback.",
+    "A full local Vite build could not be repeated because dependency installation is unavailable in this environment. JSX syntax, relative imports, package-lock consistency and CI/Modal build definitions were validated; Modal performs npm ci + npm run build during image creation."
+  ]
+}

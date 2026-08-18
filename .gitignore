@@ -1,0 +1,65 @@
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+.env.local
+
+# Vercel & Cloud
+.vercel/
+
+# Dependencies & Build Outputs
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+frontend/dist/
+build/
+
+# Python Cache & Virtual Environments
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+ENV/
+
+# IDE & OS Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Storage & Temporary Files
+backend/uploads/
+backend/reports/
+backend/storage/
+models/
+
+# Trained Model Binaries (Archived separately)
+*.ckpt
+*.pth
+*.pt
+*.onnx
+*.safetensors
+*.bin
+
+# Backup Archives
+*.zip
+*.7z
+*.rar
+*.tar
+*.gz
+
+# Old Backup Trees
+_backup_before_no_opencv_*/
+
+# Disabled Experimental Hybrid CV / YOLO Components
+backend/app/services/hybrid_cv.py
+backend/app/services/yolo_roi.py
+backend/requirements-yolo.txt
+tools/hybrid_cv_smoke.py
+HYBRID_YOLO_OPENCV_PLAN.md
+HYBRID_BUILD_VALIDATION.json
+THIRD_PARTY_YOLO_NOTICE.md

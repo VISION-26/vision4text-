@@ -1,0 +1,53 @@
+{
+  "release": "EVT_CLIP_SUBMISSION_FINAL",
+  "generated_at": "2026-08-17T18:01:36.273828+05:30",
+  "production_categories": [
+    "bottle",
+    "cable",
+    "capsule",
+    "metal_nut",
+    "pill"
+  ],
+  "experimental_extension": {
+    "categories": [
+      "carpet",
+      "grid",
+      "hazelnut",
+      "leather",
+      "screw",
+      "tile",
+      "toothbrush",
+      "transistor",
+      "wood",
+      "zipper"
+    ],
+    "production_integrated": false,
+    "note": "Retained as research/benchmark extension; not exposed as production-integrated by this submission source."
+  },
+  "patches_applied": [
+    "EVT_CLIP_REAL_EXAMPLES_AUTH_FIX_TOOLS.zip",
+    "EVT_CLIP_OOD_DYNAMIC_EVIDENCE_FIX.zip",
+    "EVT_CLIP_FINAL_PREDEPLOY_SAFETY_FIX.zip",
+    "EVT_CLIP_PRECHECK_DOMAIN_SHIFT_GUARD.zip"
+  ],
+  "checks": {
+    "frontend_source_check": "PASS",
+    "content_quality_gate": "PASS",
+    "release_guard": "PASS",
+    "hybrid_cv_smoke": "PASS",
+    "python_compile": "PASS",
+    "predeploy_patch_verify": "PASS",
+    "precheck_domain_guard_verify": "PASS"
+  },
+  "frontend_bundle_build": {
+    "status": "NOT_RE-RUN_IN_ARTIFACT_ENVIRONMENT",
+    "reason": "Submission validation used the repository source checker and release guard; install/build dependencies on the target machine with npm ci && npm run build."
+  },
+  "recommended_demo_category": "metal_nut",
+  "recommended_demo": [
+    "known good metal nut",
+    "known defective metal nut",
+    "wrong-category input"
+  ],
+  "known_limitation": "Arbitrary real-camera domain shift is not claimed as production-grade generalization."
+}

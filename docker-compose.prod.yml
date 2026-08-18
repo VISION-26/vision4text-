@@ -1,0 +1,53 @@
+services:
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: sqlite+aiosqlite:////app/storage/evtclip.sqlite3
+      UPLOAD_DIR: /app/storage/uploads
+      REPORT_DIR: /app/storage/reports
+      MODEL_DIR: /models/production
+      DEMO_MODE: "false"
+      MODAL_JOB_QUEUE: "false"
+      BACKEND_CORS_ORIGINS: '[]'
+      DOCS_ENABLED: "false"
+      ALLOW_PUBLIC_REGISTRATION: "false"
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      EVIDENCE_SIGNING_SECRET: ${EVIDENCE_SIGNING_SECRET:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADMIN_NAME: ${ADMIN_NAME:-EVT-CLIP Administrator}
+      CUDA_VISIBLE_DEVICES: ""
+    volumes:
+      - app_data:/app/storage
+      - ./models/production:/models/production:ro
+    networks: [internal]
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on: [backend]
+    networks: [internal]
+
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    depends_on: [frontend, backend]
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [internal]
+
+volumes:
+  app_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  internal:
+    driver: bridge
