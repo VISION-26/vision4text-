@@ -32,6 +32,8 @@ const RealSampleCard = ({ category, kind, title, onSelectFile }) => {
         try {
             const response = await fetch(src, { cache: 'no-store' });
             if (!response.ok) throw new Error('sample unavailable');
+            const contentTypeHeader = response.headers.get('Content-Type') || '';
+            if (!contentTypeHeader.startsWith('image/')) throw new Error('sample unavailable');
             const blob = await response.blob();
             const contentType = blob.type || 'image/png';
             const extension = contentType.includes('jpeg') ? 'jpg' : contentType.includes('webp') ? 'webp' : 'png';
