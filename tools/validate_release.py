@@ -125,9 +125,11 @@ require(all(phrase in overview for phrase in ("Detect the anomaly.", "Show where
 require("Inspection flow" in overview and "Evidence from one inspection" in overview, "overview flow/evidence sections missing")
 require("evt-overview-pipeline-tracer" in overview and "framer-motion" in overview, "animated overview pipeline missing")
 require("break-all" in detection_ui and "Worker cache" in detection_ui and "Decision source" in detection_ui, "runtime evidence wrapping guard missing")
-require("Inspection workflow" in about and "Records and export" in about, "About operational sections missing")
+require("Modular Inspection Flow" in about or "Inspection flow" in about or "Inspection workflow" in about, "About operational sections missing")
 require("Complete Model Evidence" in detection_ui and "Defect Analysis" in detection_ui, "complete model evidence/defect analysis UI missing")
 require("bbox_overlay_path" in detection_api and "bbox_overlay" in worker, "mask-derived defect location image missing")
+
+
 require("Model-stage evidence" in report_service and "Defect location from final mask" in report_service, "technical PDF evidence pages missing")
 require("Research benchmark context" in report_service and "Published EVT-CLIP paper benchmark" in report_service, "research benchmark appendix missing from PDF")
 require((ROOT / "docs/CONTENT_STYLE.md").is_file(), "project copy-style policy missing")

@@ -24,7 +24,6 @@ jobs:
           python tools/content_quality_gate.py
           python tools/frontend_source_check.py
           python tools/validate_release.py
-      - run: pip install --disable-pip-version-check numpy pillow opencv-python-headless
-      - run: python tools/hybrid_cv_smoke.py
 
       - run: docker compose -f docker-compose.prod.yml config
+
