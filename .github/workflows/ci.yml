@@ -25,5 +25,6 @@ jobs:
           python tools/frontend_source_check.py
           python tools/validate_release.py
 
-      - run: docker compose -f docker-compose.prod.yml config
+      - run: docker compose -f docker-compose.prod.yml --env-file .env.example config
+
 
