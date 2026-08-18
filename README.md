@@ -93,7 +93,7 @@ Industrial ensemble prompts (*"a damaged [category] with cracks and foreign cont
 ### 3. PatchCore Coreset Subsampling
 Mid-level feature representations from WideResNet-50 are aggregated into neighborhood patch collections $\mathcal{M}$ and compressed via iterative minimax facility location:
 
-$$c^* = \operatorname{argmax}_{m \in \mathcal{M} \setminus \mathcal{C}} \min_{c \in \mathcal{C}} \|m - c\|_2$$
+$$c^* = \arg\max_{m \in \mathcal{M} \setminus \mathcal{C}} \min_{c \in \mathcal{C}} \|m - c\|_2$$
 
 This retains $99.8\%$ localization fidelity while shrinking the memory footprint by $90\%$, enabling rapid nearest-neighbor searches on standard CPU instances.
 
@@ -104,8 +104,9 @@ $$S_{\text{final}} = \alpha \cdot \Phi_{\text{EVT}}(S_{\text{PatchCore}}) + \bet
 
 * **Production Decision Threshold**: $\tau_{\text{decision}} = 0.267$
 * **Result**:
-  * Score $< 0.267 \implies \mathbf{NORMAL / PASS}$
-  * Score $\ge 0.267 \implies \mathbf{ANOMALOUS / REJECT}$
+  * $\text{Score} < 0.267 \implies \text{NORMAL / PASS}$
+  * $\text{Score} \ge 0.267 \implies \text{ANOMALOUS / REJECT}$
+
 
 ---
 
