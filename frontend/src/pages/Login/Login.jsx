@@ -11,7 +11,7 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const { login, loginAsGuest, loading } = useAuth();
+    const { login, loading } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (event) => {
@@ -143,22 +143,6 @@ const Login = () => {
                                 {loading ? 'Signing in…' : 'Sign In'}
                             </Button>
                         </form>
-
-                        {/* Viva & Defense Quick Access */}
-                        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/10">
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                className="w-full py-3 rounded-xl border border-fuchsia-300 dark:border-fuchsia-800/60 bg-gradient-to-r from-fuchsia-500/10 via-purple-500/10 to-cyan-500/10 text-fuchsia-700 dark:text-fuchsia-300 hover:border-fuchsia-400 font-semibold"
-                                onClick={() => {
-                                    loginAsGuest('Admin');
-                                    navigate('/dashboard');
-                                }}
-                            >
-                                ⚡ Examiner 1-Click Access (Viva / Defense Mode)
-                            </Button>
-                            <p className="mt-2 text-center text-[10px] text-slate-400">Instant access for project evaluation and defense viva.</p>
-                        </div>
                     </div>
 
                     <p className="mt-5 text-center text-[10px] text-slate-400">Five industrial categories · model-stage evidence · stored inspection history</p>
