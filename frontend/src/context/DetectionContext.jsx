@@ -130,10 +130,10 @@ const mapJob = (item) => ({
 });
 
 const jobMessage = (status) => ({
-    queued: 'Waiting for an inspection worker',
+    queued: 'Waiting for CPU worker',
     starting: 'Starting the inspection worker',
-    running: 'Running the inspection models',
-    complete: 'Inspection complete',
+    running: 'Validating input and running EVT-CLIP inspection',
+    complete: 'Finalizing result',
     failed: 'Inspection failed',
     timed_out: 'Inspection timed out',
     cancelled: 'Inspection cancelled',
@@ -274,21 +274,22 @@ export const DetectionProvider = ({ children }) => {
         return mapped;
     }, [history.length, historyTotal]);
 
-    const precheckInput = async (imageFile, category) => {
+    const precheckInput = useCallback(async (imageFile, category) => {
         const form = new FormData();
         form.append('file', imageFile);
         form.append('category', category);
         const { data } = await api.post('/detect/precheck', form, {
             headers: { 'Content-Type': 'multipart/form-data' },
-            timeout: 120000,
+            timeout: 15000,
         });
         return data;
-    };
+    }, []);
 
     const runDetection = async (imageFile, datasetId, category) => {
         setLoading(true);
         setJobStatus('Preparing image');
         setCurrentJob(null);
+        let activeJobId = null;
         try {
             const form = new FormData();
             form.append('file', imageFile);
@@ -303,12 +304,22 @@ export const DetectionProvider = ({ children }) => {
             });
 
             let job = submission.data;
+            activeJobId = job.job_id;
             const startedAt = Date.now();
             setCurrentJob({ id: job.job_id, status: job.status, startedAt, category, callId: job.call_id, error: null });
             setJobStatus(jobMessage(job.status));
             await loadJobs();
 
-            for (let attempt = 0; attempt < 480; attempt += 1) {
+            const MAX_CLIENT_TIMEOUT_MS = 120000;
+            const POLL_INTERVAL_MS = 2000;
+            const maxAttempts = Math.ceil(MAX_CLIENT_TIMEOUT_MS / POLL_INTERVAL_MS);
+
+            for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+                const elapsedMs = Date.now() - startedAt;
+                if (elapsedMs > MAX_CLIENT_TIMEOUT_MS) {
+                    break;
+                }
+
                 if (job.status === 'complete' && job.detection) {
                     const mapped = await attachAssets(job.detection, URL.createObjectURL(imageFile));
                     setHistory((items) => [mapped, ...items.filter((item) => String(item.id) !== String(mapped.id))]);
@@ -324,12 +335,23 @@ export const DetectionProvider = ({ children }) => {
                     throw new Error(message);
                 }
 
-                setCurrentJob((value) => value ? { ...value, status: job.status, ageSeconds: Math.floor((Date.now() - startedAt) / 1000) } : value);
+                setCurrentJob((value) => value ? { ...value, status: job.status, ageSeconds: Math.floor(elapsedMs / 1000) } : value);
                 setJobStatus(jobMessage(job.status));
-                await sleep(2000);
+                await sleep(POLL_INTERVAL_MS);
                 job = (await api.get(`/detect/jobs/${job.job_id}`)).data;
             }
-            throw new Error('Inspection polling window ended before the server returned a terminal state.');
+
+            if (activeJobId) {
+                try {
+                    await api.post(`/detect/jobs/${activeJobId}/cancel`);
+                } catch {
+                    // best-effort cancellation
+                }
+            }
+            setCurrentJob((value) => value ? { ...value, status: 'timed_out', error: 'Inspection took too long. Please retry.' } : value);
+            setJobStatus('Inspection timed out');
+            await loadJobs();
+            throw new Error('Inspection took too long. Please retry.');
         } finally {
             setLoading(false);
             window.setTimeout(() => setJobStatus('idle'), 1800);

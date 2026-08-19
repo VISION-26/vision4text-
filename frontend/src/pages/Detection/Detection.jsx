@@ -78,32 +78,6 @@ const Detection = () => {
         return () => { active = false; };
     }, []);
 
-    // Automatic lightweight category precheck. This runs OpenCLIP/reference
-    // validation only; it does NOT run EfficientAD, PatchCore, Stage-2 or Stage-3.
-    useEffect(() => {
-        if (!selectedImage || !category || !precheckInput) {
-            setPrecheck(null);
-            setPrecheckBusy(false);
-            return undefined;
-        }
-        let active = true;
-        const timer = window.setTimeout(async () => {
-            setPrecheckBusy(true);
-            try {
-                const next = await precheckInput(selectedImage, category);
-                if (!active) return;
-                setPrecheck(next);
-                if (next && next.can_run === false) setPrecheckModalOpen(true);
-            } catch (err) {
-                if (!active) return;
-                setPrecheck({ state: 'precheck_error', can_run: false, message: err.message || 'Input precheck failed.' });
-            } finally {
-                if (active) setPrecheckBusy(false);
-            }
-        }, 250);
-        return () => { active = false; window.clearTimeout(timer); };
-    }, [selectedImage, category, precheckInput]);
-
     useEffect(() => {
         if (!datasets.some((d) => String(d.id) === String(selectedDatasetId))) {
             setSelectedDatasetId(String(datasets[0]?.id || '0'));
@@ -148,10 +122,6 @@ const Detection = () => {
 
     const execute = async (file = selectedImage, categoryOverride = category) => {
         if (!file || isRunning) return;
-        if (precheckBusy || precheck?.can_run === false) {
-            if (precheck?.can_run === false) setPrecheckModalOpen(true);
-            return;
-        }
         setIsRunning(true);
         setError('');
         setSafetyModalOpen(false);
@@ -382,8 +352,8 @@ const Detection = () => {
                             jobStatus={jobStatus}
                             result={result}
                             onRun={() => execute()}
-                            runDisabled={precheckBusy || precheck?.can_run === false}
-                            runLabel={precheckBusy ? 'Checking product...' : precheck?.can_run === false ? 'Resolve input mismatch' : 'Run Inspection'}
+                            runDisabled={!imagePreview || isRunning}
+                            runLabel="Run Inspection"
                             onReset={handleReset}
                         />
                     </div>
@@ -391,9 +361,12 @@ const Detection = () => {
             </div>
 
             {selectedImage && (
-                <div className={`rounded-lg border px-4 py-3 text-xs ${precheckBusy ? 'border-sky-200 bg-sky-50 text-sky-700' : precheck?.can_run ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
-                    <b>{precheckBusy ? 'Checking product before inspection…' : precheck?.can_run ? 'Precheck passed before full inspection.' : 'Inspection is blocked until the input/category precheck passes.'}</b>
-                    {!precheckBusy && precheck?.message && <span className="ml-2">{precheck.message}</span>}
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-700 dark:border-slate-800 dark:bg-[#12122a] dark:text-slate-300 flex flex-wrap items-center justify-between gap-3">
+                    <span className="flex items-center gap-2">
+                        <ShieldCheck size={16} className="text-fuchsia-500 shrink-0" />
+                        <b>Product and image quality will be verified when inspection starts.</b>
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">CPU Specialist Validation · Fail-Closed</span>
                 </div>
             )}
 

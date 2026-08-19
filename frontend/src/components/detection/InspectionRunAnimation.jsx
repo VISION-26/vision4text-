@@ -11,20 +11,21 @@ import {
 
 const stageForStatus = (status = '') => {
     const value = status.toLowerCase();
-    if (value.includes('upload') || value.includes('prepar')) return 0;
-    if (value.includes('queue')) return 1;
-    if (value.includes('running') || value.includes('evt-clip')) return 2;
-    if (value.includes('complete') || value.includes('final')) return 3;
+    if (value.includes('upload') || value.includes('prepar') || value.includes('submit')) return 0;
+    if (value.includes('queue') || value.includes('waiting') || value.includes('starting') || value.includes('cpu worker')) return 1;
+    if (value.includes('running') || value.includes('validat') || value.includes('model') || value.includes('evt-clip') || value.includes('inspecting')) return 2;
+    if (value.includes('complete') || value.includes('final') || value.includes('rejected')) return 3;
     return 0;
 };
 
 const statusLabel = (status = '') => {
     const value = status.toLowerCase();
-    if (value.includes('upload')) return 'Preparing inspection image';
-    if (value.includes('queue')) return 'Waiting for the CPU inspection worker';
-    if (value.includes('running') || value.includes('evt-clip')) return 'EfficientAD + PatchCore + EVT-CLIP are inspecting';
-    if (value.includes('complete')) return 'Finalizing evidence and decision';
-    return status || 'Preparing inspection';
+    if (value.includes('upload') || value.includes('prepar')) return 'Preparing inspection image';
+    if (value.includes('submit')) return 'Submitting inspection job';
+    if (value.includes('queue') || value.includes('waiting') || value.includes('cpu worker') || value.includes('starting')) return 'Waiting for CPU worker';
+    if (value.includes('validat') || value.includes('running') || value.includes('inspect')) return 'Validating input and running EVT-CLIP inspection';
+    if (value.includes('complete') || value.includes('final')) return 'Finalizing evidence and decision';
+    return status || 'Running inspection';
 };
 
 const resultPresentation = (result) => {
