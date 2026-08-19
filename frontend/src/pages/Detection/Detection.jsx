@@ -9,12 +9,11 @@ import Modal from '../../components/common/Modal';
 import CameraCapture from '../../components/detection/CameraCapture';
 import InspectionRunAnimation from '../../components/detection/InspectionRunAnimation';
 import CategoryExampleGuide, { CATEGORY_GUIDANCE } from '../../components/detection/CategoryExampleGuide';
-import { generateSampleImageFile } from '../../utils/sampleGenerator';
 import {
-    UploadCloud, FileText, Layers, Eye, Gauge,
-    ShieldCheck, Clock, Cpu, AlertTriangle, CheckCircle2,
+    UploadCloud, FileText, Layers, Eye,
+    ShieldCheck, Cpu, AlertTriangle, CheckCircle2,
     Archive, Ban, RefreshCw, Crosshair, GitBranch, BrainCircuit,
-    FileImage, TimerReset, XCircle, CircleDot, Sparkles, Zap, Award, BookOpen,
+    FileImage, TimerReset, XCircle, CircleDot,
 } from 'lucide-react';
 
 const fallbackSupportedCategories = ['bottle', 'cable', 'capsule', 'metal_nut', 'pill'];
@@ -212,48 +211,6 @@ const Detection = () => {
                 </div>
             )}
 
-            {/* Viva & Examiner Quick-Test Bench */}
-            <div className="rounded-xl border border-fuchsia-200 bg-gradient-to-r from-fuchsia-500/10 via-purple-500/10 to-cyan-500/10 p-4 dark:border-fuchsia-900/40">
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                    <div className="flex items-center gap-2">
-                        <Sparkles size={16} className="text-fuchsia-500 animate-pulse" />
-                        <span className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider">
-                            ⚡ Examiner / Viva 1-Click Test Bench
-                        </span>
-                        <Badge variant="gradient">Defense Ready</Badge>
-                    </div>
-                    <span className="text-[10px] text-fuchsia-600 dark:text-fuchsia-300 font-medium">Click any sample to instantly load realistic test data</span>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 text-[11px]">
-                    {[
-                        { cat: 'bottle', kind: 'defect', label: 'Bottle (Defect)', icon: '🍾', badge: 'Crack / Stain' },
-                        { cat: 'bottle', kind: 'good', label: 'Bottle (Normal)', icon: '🍾', badge: 'Pristine' },
-                        { cat: 'capsule', kind: 'defect', label: 'Capsule (Defect)', icon: '💊', badge: 'Dent / Split' },
-                        { cat: 'metal_nut', kind: 'defect', label: 'Metal Nut (Defect)', icon: '🔩', badge: 'Gouge / Scratch' },
-                        { cat: 'cable', kind: 'defect', label: 'Cable (Defect)', icon: '🔌', badge: 'Exposed Wire' },
-                        { cat: 'pill', kind: 'defect', label: 'Pill (Defect)', icon: '⚪', badge: 'Chipped Edge' },
-                    ].map((item) => (
-                        <button
-                            key={`${item.cat}_${item.kind}`}
-                            type="button"
-                            onClick={async () => {
-                                handleCategoryChange(item.cat);
-                                const file = await generateSampleImageFile(item.cat, item.kind);
-                                selectImage(file);
-                            }}
-                            disabled={isRunning}
-                            className="flex flex-col items-center justify-center p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-[#0c0f1f]/80 backdrop-blur hover:border-fuchsia-400 hover:shadow-md transition text-center group disabled:opacity-50"
-                        >
-                            <span className="text-xl group-hover:scale-110 transition-transform">{item.icon}</span>
-                            <span className="font-semibold text-[10px] mt-1 text-slate-800 dark:text-slate-200 leading-tight">{item.label}</span>
-                            <span className={`text-[8px] mt-1 px-1.5 py-0.5 rounded font-mono ${item.kind === 'defect' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'}`}>
-                                {item.badge}
-                            </span>
-                        </button>
-                    ))}
-                </div>
-            </div>
-
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card title="1. Select Input Source" subtitle="Upload an image or capture one directly from the camera">
                     {imagePreview ? (
@@ -359,16 +316,6 @@ const Detection = () => {
                     </div>
                 </Card>
             </div>
-
-            {selectedImage && (
-                <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-700 dark:border-slate-800 dark:bg-[#12122a] dark:text-slate-300 flex flex-wrap items-center justify-between gap-3">
-                    <span className="flex items-center gap-2">
-                        <ShieldCheck size={16} className="text-fuchsia-500 shrink-0" />
-                        <b>Product and image quality will be verified when inspection starts.</b>
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-mono">CPU Specialist Validation · Fail-Closed</span>
-                </div>
-            )}
 
             {hardRejected && !safetyModalOpen && (
                 <Card className="border-amber-300 dark:border-amber-800/70">
