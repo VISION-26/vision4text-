@@ -274,17 +274,6 @@ export const DetectionProvider = ({ children }) => {
         return mapped;
     }, [history.length, historyTotal]);
 
-    const precheckInput = useCallback(async (imageFile, category) => {
-        const form = new FormData();
-        form.append('file', imageFile);
-        form.append('category', category);
-        const { data } = await api.post('/detect/precheck', form, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-            timeout: 15000,
-        });
-        return data;
-    }, []);
-
     const runDetection = async (imageFile, datasetId, category) => {
         setLoading(true);
         setJobStatus('Preparing image');
@@ -293,7 +282,10 @@ export const DetectionProvider = ({ children }) => {
         try {
             const form = new FormData();
             form.append('file', imageFile);
-            const upload = await api.post('/upload', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+            const upload = await api.post('/upload', form, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+                timeout: 30000,
+            });
 
             setJobStatus('Submitting inspection');
             const selectedDataset = datasets.find((item) => String(item.id) === String(datasetId));
@@ -301,7 +293,7 @@ export const DetectionProvider = ({ children }) => {
                 image_path: upload.data.image_path,
                 dataset_name: selectedDataset?.name || 'EVT-CLIP Inspection Profile',
                 category,
-            });
+            }, { timeout: 30000 });
 
             let job = submission.data;
             activeJobId = job.job_id;
@@ -321,29 +313,32 @@ export const DetectionProvider = ({ children }) => {
                 }
 
                 if (job.status === 'complete' && job.detection) {
+                    // Move the UI to a terminal state before downloading optional visual evidence.
+                    // Asset retrieval must not make a completed job look like it is checking again.
+                    setCurrentJob((value) => value ? { ...value, status: 'complete', detectionId: job.detection.id } : value);
+                    setJobStatus(job.detection.result_valid === false ? 'Input rejected' : 'Inspection complete');
                     const mapped = await attachAssets(job.detection, URL.createObjectURL(imageFile));
                     setHistory((items) => [mapped, ...items.filter((item) => String(item.id) !== String(mapped.id))]);
                     setHistoryTotal((total) => total + 1);
-                    setCurrentJob((value) => value ? { ...value, status: 'complete', detectionId: mapped.id } : value);
-                    setJobStatus(mapped.resultValid ? 'Inspection complete' : 'Input rejected');
                     await loadJobs();
                     return mapped;
                 }
                 if (['failed', 'timed_out', 'cancelled'].includes(job.status)) {
                     const message = job.error || (job.status === 'timed_out' ? 'Inspection timed out.' : job.status === 'cancelled' ? 'Inspection was cancelled.' : 'CPU inference failed.');
                     setCurrentJob((value) => value ? { ...value, status: job.status, error: message } : value);
+                    setJobStatus(jobMessage(job.status));
                     throw new Error(message);
                 }
 
                 setCurrentJob((value) => value ? { ...value, status: job.status, ageSeconds: Math.floor(elapsedMs / 1000) } : value);
                 setJobStatus(jobMessage(job.status));
                 await sleep(POLL_INTERVAL_MS);
-                job = (await api.get(`/detect/jobs/${job.job_id}`)).data;
+                job = (await api.get(`/detect/jobs/${job.job_id}`, { timeout: 15000 })).data;
             }
 
             if (activeJobId) {
                 try {
-                    await api.post(`/detect/jobs/${activeJobId}/cancel`);
+                    await api.post(`/detect/jobs/${activeJobId}/cancel`, null, { timeout: 10000 });
                 } catch {
                     // best-effort cancellation
                 }
@@ -354,7 +349,6 @@ export const DetectionProvider = ({ children }) => {
             throw new Error('Inspection took too long. Please retry.');
         } finally {
             setLoading(false);
-            window.setTimeout(() => setJobStatus('idle'), 1800);
         }
     };
 
@@ -426,7 +420,7 @@ export const DetectionProvider = ({ children }) => {
         <DetectionContext.Provider value={{
             datasets, history, historyTotal, loading, jobStatus, jobs, currentJob,
             apiUrl: API_BASE_URL, mlServerUrl: 'Modal CPU worker',
-            precheckInput, runDetection, cancelCurrentJob, retryJob, addDataset, deleteDataset, deleteReport,
+            runDetection, cancelCurrentJob, retryJob, addDataset, deleteDataset, deleteReport,
             generateAndDownloadReport, downloadEvidenceBundle,
             loadAssetsForDetection, loadOlderHistory, reload: load, reloadJobs: loadJobs,
         }}>

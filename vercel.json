@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "cd frontend && npm install && npm run build",
+  "buildCommand": "npm --prefix frontend ci --no-audit --no-fund && npm --prefix frontend run build",
   "outputDirectory": "frontend/dist",
   "rewrites": [
     {
@@ -10,6 +10,10 @@
     {
       "source": "/example-assets/:path*",
       "destination": "https://akshaynhcm--evt-clip-v2-production-web.modal.run/example-assets/:path*"
+    },
+    {
+      "source": "/health",
+      "destination": "https://akshaynhcm--evt-clip-v2-production-web.modal.run/health"
     },
     {
       "source": "/(.*)",

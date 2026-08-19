@@ -58,23 +58,8 @@ export const AuthProvider = ({ children }) => {
 
     const hasPermission = (permission) => Boolean(user && (SYSTEM_ROLE_PERMISSIONS[user.role] || []).includes(permission));
 
-    const loginAsGuest = (role = 'Admin') => {
-        const demoUser = {
-            id: 'examiner-demo',
-            email: 'examiner@evt-clip.edu',
-            full_name: 'External Project Examiner',
-            role: role,
-            name: 'External Project Examiner',
-        };
-        localStorage.setItem('visiontext_access_token', 'demo_examiner_token_2026');
-        localStorage.setItem('visiontext_refresh_token', 'demo_examiner_refresh_2026');
-        localStorage.setItem(storageKey, JSON.stringify(demoUser));
-        setUser(demoUser);
-        return demoUser;
-    };
-
     return (
-        <AuthContext.Provider value={{ user, login, loginAsGuest, updateProfile, logout, hasPermission, loading }}>
+        <AuthContext.Provider value={{ user, login, updateProfile, logout, hasPermission, loading }}>
             {children}
         </AuthContext.Provider>
     );

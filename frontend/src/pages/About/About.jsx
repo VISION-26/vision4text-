@@ -32,7 +32,7 @@ const About = () => {
             <SectionTitle
                 title="About EVT-CLIP++"
                 subtitle="Next-Generation Industrial Visual Anomaly Detection combining Extreme Value Theory (EVT), Coreset Memory Banks (PatchCore), Fast Student-Teacher Distillation (EfficientAD), and Zero-Shot Vision-Language Guidance (CLIP)."
-                badge="Major Project 2026 · College Defense Edition"
+                badge="Major Project 2026 · Research Edition"
             />
 
             {/* Academic Banner */}
@@ -44,7 +44,7 @@ const About = () => {
                             <span className="font-bold text-sm uppercase tracking-wider text-slate-900 dark:text-white">
                                 Research & Engineering Specification
                             </span>
-                            <Badge variant="gradient">10/10 Defense Ready</Badge>
+                            <Badge variant="gradient">Research Ready</Badge>
                         </div>
                         <p className="text-xs text-slate-600 dark:text-slate-300 max-w-3xl leading-relaxed">
                             Addresses the critical challenge of high false-positive rates and domain generalization in visual surface inspection by mathematically uniting statistical tail fitting (Gumbel/Weibull EVT) with pretrained semantic text embeddings.
@@ -68,7 +68,7 @@ const About = () => {
                         { id: 'theory', label: '1. Mathematical Foundations', icon: Code2 },
                         { id: 'architecture', label: '2. Multi-Stage Pipeline', icon: Layers },
                         { id: 'benchmarks', label: '3. Empirical Benchmarks', icon: GitCompare },
-                        { id: 'defense', label: '4. Viva Defense FAQ', icon: BookOpen },
+                        { id: 'technical', label: '4. Technical FAQ', icon: BookOpen },
                     ].map(({ id, label, icon: Icon }) => (
                         <button
                             key={id}
@@ -156,7 +156,7 @@ const About = () => {
                     <Card title="End-to-End Modular Inspection Flow" subtitle="5-stage decoupled CPU/GPU architecture">
                         <div className="grid grid-cols-1 md:grid-cols-5 gap-3 text-xs">
                             {[
-                                { stage: '01', title: 'Input & Quality Gate', desc: 'Resolution normalization (256x256), illumination contrast check, and category safety precheck via OpenCLIP embeddings.', color: 'border-sky-300 bg-sky-50 dark:bg-sky-950/20 text-sky-700 dark:text-sky-300' },
+                                { stage: '01', title: 'Input & Quality Gate', desc: 'Resolution normalization (256x256), illumination contrast check, and category safety validation via OpenCLIP embeddings.', color: 'border-sky-300 bg-sky-50 dark:bg-sky-950/20 text-sky-700 dark:text-sky-300' },
                                 { stage: '02', title: 'Specialist Feature Extraction', desc: 'Parallel pass through Student-Teacher ResNet (EfficientAD) and WideResNet-50 patch embeddings (PatchCore).', color: 'border-fuchsia-300 bg-fuchsia-50 dark:bg-fuchsia-950/20 text-fuchsia-700 dark:text-fuchsia-300' },
                                 { stage: '03', title: 'Statistical EVT Fusion', desc: 'Weibull extreme quantile transformation mapping diverse model logits onto an aligned (0, 1) probability scale.', color: 'border-violet-300 bg-violet-50 dark:bg-violet-950/20 text-violet-700 dark:text-violet-300' },
                                 { stage: '04', title: 'EVT-CLIP ViT Refinement', desc: 'Zero-shot textual anomaly cross-attention masks out background noise and sharpens sub-millimeter defects.', color: 'border-amber-300 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-300' },
@@ -260,8 +260,8 @@ const About = () => {
                 </div>
             )}
 
-            {/* TAB 4: Viva Defense FAQ */}
-            {activeTab === 'defense' && (
+            {/* TAB 4: Technical FAQ */}
+            {activeTab === 'technical' && (
                 <div className="grid lg:grid-cols-2 gap-6">
                     {[
                         {

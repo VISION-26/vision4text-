@@ -63,3 +63,10 @@ tools/hybrid_cv_smoke.py
 HYBRID_YOLO_OPENCV_PLAN.md
 HYBRID_BUILD_VALIDATION.json
 THIRD_PARTY_YOLO_NOTICE.md
+
+.vercel
+.env*
+
+# Keep backend database model source files
+!backend/app/models/
+!backend/app/models/*.py

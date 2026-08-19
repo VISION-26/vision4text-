@@ -30,7 +30,6 @@ const friendlySpecialist = (value) => value === 'efficientad' ? 'EfficientAD' : 
 const Detection = () => {
     const {
         datasets,
-        precheckInput,
         runDetection,
         jobStatus,
         currentJob,
@@ -55,9 +54,6 @@ const Detection = () => {
     const [imageMeta, setImageMeta] = useState(null);
     const [jobAge, setJobAge] = useState(0);
     const [exportNotice, setExportNotice] = useState('');
-    const [precheck, setPrecheck] = useState(null);
-    const [precheckBusy, setPrecheckBusy] = useState(false);
-    const [precheckModalOpen, setPrecheckModalOpen] = useState(false);
 
     useEffect(() => {
         let active = true;
@@ -108,8 +104,6 @@ const Detection = () => {
         setError('');
         setExportNotice('');
         setSafetyModalOpen(false);
-        setPrecheck(null);
-        setPrecheckModalOpen(false);
     };
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -149,8 +143,6 @@ const Detection = () => {
         setSafetyModalOpen(false);
         setImageMeta(null);
         setExportNotice('');
-        setPrecheck(null);
-        setPrecheckModalOpen(false);
     };
 
     const handleCategoryChange = (next) => {
@@ -158,8 +150,6 @@ const Detection = () => {
         setResult(null);
         setSafetyModalOpen(false);
         setError('');
-        setPrecheck(null);
-        setPrecheckModalOpen(false);
     };
 
     const downloadReport = async () => {
@@ -547,32 +537,6 @@ const Detection = () => {
                     </div>
                 </div>
             )}
-
-            <Modal
-                isOpen={precheckModalOpen && Boolean(precheck) && precheck?.can_run === false}
-                onClose={() => setPrecheckModalOpen(false)}
-                title={precheck?.state === 'unsupported_input' ? 'Unsupported Image' : precheck?.state === 'poor_quality_input' ? 'Image Quality Too Poor' : 'Product Category Mismatch'}
-                size="md"
-                actions={(
-                    <>
-                        <Button variant="secondary" onClick={() => setPrecheckModalOpen(false)}>Keep Image</Button>
-                        {precheck?.predicted_category && supportedCategories.includes(precheck.predicted_category) && precheck.predicted_category !== category && (
-                            <Button variant="gradient" onClick={() => { setCategory(precheck.predicted_category); setPrecheckModalOpen(false); }}>Use {labelCategory(precheck.predicted_category)}</Button>
-                        )}
-                    </>
-                )}
-            >
-                <div className="text-center py-2">
-                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-rose-100 text-rose-600"><Ban size={28} /></div>
-                    <h4 className="text-base font-bold">Full anomaly inspection has not started.</h4>
-                    <p className="mt-3 text-sm text-slate-500">{precheck?.message}</p>
-                    <div className="mt-5 grid grid-cols-2 gap-3 text-left text-xs">
-                        <div className="rounded-lg border border-slate-200 p-3"><span className="block text-[10px] uppercase text-slate-400">Selected</span><b className="capitalize">{labelCategory(category)}</b></div>
-                        <div className="rounded-lg border border-slate-200 p-3"><span className="block text-[10px] uppercase text-slate-400">Closest supported</span><b className="capitalize">{labelCategory(precheck?.predicted_category)}</b></div>
-                    </div>
-                    <p className="mt-4 text-[11px] text-slate-400">Only the lightweight category/OOD gate ran. EfficientAD, PatchCore, Stage-2 and Stage-3 were not executed.</p>
-                </div>
-            </Modal>
 
             <Modal
                 isOpen={safetyModalOpen && Boolean(result)}

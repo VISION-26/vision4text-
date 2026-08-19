@@ -1,4 +1,4 @@
-import json
+﻿import json
 import os
 from pathlib import Path
 
@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     DEMO_MODE: bool = False
     MODEL_DIR: str = "/models/production"
     PRIMARY_MODEL: str = "evtclip_v2"
-    SUPPORTED_CATEGORIES: set[str] = {"bottle", "cable", "capsule", "carpet", "grid", "hazelnut", "leather", "metal_nut", "pill", "screw", "tile", "toothbrush", "transistor", "wood", "zipper"}
+    SUPPORTED_CATEGORIES: set[str] = {"bottle", "cable", "capsule", "metal_nut", "pill"}
     ML_CONFIDENCE_THRESHOLD: float = Field(default=0.267, ge=0, le=1)
     DOCS_ENABLED: bool = False
     ALLOW_PUBLIC_REGISTRATION: bool = True
@@ -109,3 +109,5 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+

@@ -10,6 +10,10 @@
       "destination": "https://akshaynhcm--evt-clip-v2-production-web.modal.run/example-assets/:path*"
     },
     {
+      "source": "/health",
+      "destination": "https://akshaynhcm--evt-clip-v2-production-web.modal.run/health"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

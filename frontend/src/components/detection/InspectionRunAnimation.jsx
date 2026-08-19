@@ -66,19 +66,12 @@ const InspectionRunAnimation = ({
     runDisabled = false,
     runLabel = 'Run Inspection',
 }) => {
-    const [showCompletion, setShowCompletion] = useState(false);
-
-    useEffect(() => {
-        if (!result?.id) return undefined;
-        setShowCompletion(true);
-        const timer = window.setTimeout(() => setShowCompletion(false), 2600);
-        return () => window.clearTimeout(timer);
-    }, [result?.id]);
-
     const activeStage = stageForStatus(jobStatus);
     const completion = useMemo(() => resultPresentation(result), [result]);
     const CompletionIcon = completion?.Icon;
-    const view = isRunning ? 'running' : (showCompletion && completion ? 'complete' : 'idle');
+    // Keep a completed or rejected result visible until the operator changes or resets the input.
+    // A timed transition back to the run screen made a completed inspection look like a loop.
+    const view = isRunning ? 'running' : (completion ? 'complete' : 'idle');
     const categoryLabel = (category || 'product').replace('_', ' ');
 
     return (
