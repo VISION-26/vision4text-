@@ -133,7 +133,22 @@ const CameraCapture = ({ onCapture, disabled = false }) => {
 
                         <div className="relative flex min-h-[280px] items-center justify-center bg-black sm:min-h-[480px]">
                             <video ref={videoRef} autoPlay playsInline muted className="max-h-[70vh] w-full object-contain" />
-                            {starting && <div className="absolute text-sm font-semibold text-slate-300">Starting camera…</div>}
+                            {starting ? (
+                                <div className="absolute text-sm font-semibold text-slate-300">Starting camera…</div>
+                            ) : (
+                                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                                    <div className="relative flex items-center justify-center">
+                                        <div className="h-52 w-52 sm:h-64 sm:w-64 rounded-full border-2 border-dashed border-cyan-400/80 shadow-[0_0_25px_rgba(6,182,212,0.35)]" />
+                                        <div className="absolute -top-2 -left-2 h-4 w-4 border-t-2 border-l-2 border-cyan-300" />
+                                        <div className="absolute -top-2 -right-2 h-4 w-4 border-t-2 border-r-2 border-cyan-300" />
+                                        <div className="absolute -bottom-2 -left-2 h-4 w-4 border-b-2 border-l-2 border-cyan-300" />
+                                        <div className="absolute -bottom-2 -right-2 h-4 w-4 border-b-2 border-r-2 border-cyan-300" />
+                                    </div>
+                                    <span className="mt-3 rounded-full bg-slate-950/80 px-3 py-1 text-[11px] font-medium text-cyan-200 backdrop-blur border border-cyan-500/30">
+                                        Center product inside target guide
+                                    </span>
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-1 gap-2 border-t border-slate-700 p-4 sm:grid-cols-3">

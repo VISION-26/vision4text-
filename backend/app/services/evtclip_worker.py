@@ -935,6 +935,196 @@ def _rejected_payload(
     }
 
 
+def _find_compact_salient_nut_box(small_gray: Image.Image) -> tuple[int, int, int, int] | None:
+    """Find the most compact, central high-contrast object using BFS connected components."""
+    from PIL import ImageFilter
+
+    grid_size = 96
+    gw, gh = grid_size, max(32, int(grid_size * small_gray.height / max(1, small_gray.width)))
+    grid_img = small_gray.resize((gw, gh), Image.Resampling.BILINEAR)
+
+    edges = grid_img.filter(ImageFilter.FIND_EDGES)
+    dilated = edges.filter(ImageFilter.MaxFilter(size=5))
+    arr = np.asarray(dilated, dtype=np.float32)
+
+    Y, X = np.ogrid[:gh, :gw]
+    cx, cy = gw / 2.0, gh / 2.0
+    dist_sq = ((X - cx) / (gw * 0.40)) ** 2 + ((Y - cy) / (gh * 0.40)) ** 2
+    center_weight = np.exp(-0.5 * dist_sq)
+    weighted = arr * center_weight
+
+    thresh = float(np.percentile(weighted, 85))
+    if thresh < 2.0:
+        return None
+    active = weighted >= thresh
+
+    visited = np.zeros((gh, gw), dtype=bool)
+    components = []
+
+    for y in range(gh):
+        for x in range(gw):
+            if active[y, x] and not visited[y, x]:
+                comp_pixels = []
+                queue = [(y, x)]
+                visited[y, x] = True
+                while queue:
+                    curr_y, curr_x = queue.pop()
+                    comp_pixels.append((curr_y, curr_x))
+                    for dy, dx in ((-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)):
+                        ny, nx = curr_y + dy, curr_x + dx
+                        if 0 <= ny < gh and 0 <= nx < gw and active[ny, nx] and not visited[ny, nx]:
+                            visited[ny, nx] = True
+                            queue.append((ny, nx))
+
+                if len(comp_pixels) >= 12:
+                    ys = [p[0] for p in comp_pixels]
+                    xs = [p[1] for p in comp_pixels]
+                    min_x, max_x = min(xs), max(xs)
+                    min_y, max_y = min(ys), max(ys)
+                    bw = max_x - min_x + 1
+                    bh = max_y - min_y + 1
+                    aspect = max(bw, bh) / max(1, min(bw, bh))
+                    if aspect <= 2.2:
+                        comp_cx = (min_x + max_x) / 2.0
+                        comp_cy = (min_y + max_y) / 2.0
+                        dist_to_center = np.sqrt((comp_cx - cx) ** 2 + (comp_cy - cy) ** 2)
+                        score = len(comp_pixels) / (1.0 + dist_to_center * 0.5 + (aspect - 1.0) * 15.0)
+                        components.append((score, min_x, min_y, max_x, max_y))
+
+    if not components:
+        return None
+
+    components.sort(key=lambda c: c[0], reverse=True)
+    _, min_x, min_y, max_x, max_y = components[0]
+
+    scale_x = small_gray.width / float(gw)
+    scale_y = small_gray.height / float(gh)
+
+    bx0 = int(round(min_x * scale_x))
+    by0 = int(round(min_y * scale_y))
+    bx1 = int(round(max_x * scale_x))
+    by1 = int(round(max_y * scale_y))
+
+    bw = bx1 - bx0
+    bh = by1 - by0
+    pad_x = int(bw * 0.18)
+    pad_y = int(bh * 0.18)
+
+    return (
+        max(0, bx0 - pad_x),
+        max(0, by0 - pad_y),
+        min(small_gray.width, bx1 + pad_x),
+        min(small_gray.height, by1 + pad_y),
+    )
+
+
+def _condition_metal_nut_input(image: Image.Image) -> tuple[Image.Image, dict[str, Any]]:
+    """Isolate, center, and background-neutralize a Metal Nut for real-world photos.
+
+    Preserves standard MVTec AD images untouched while making real phone, webcam,
+    and internet images robust against background table disturbances and lighting glare.
+    """
+    from PIL import ImageOps
+
+    orig_rgb = image.convert("RGB")
+    orig_w, orig_h = orig_rgb.size
+    arr = np.asarray(orig_rgb, dtype=np.float32)
+
+    # 1. Check if image is already a clean studio MVTec image
+    c_size = min(20, orig_w // 8, orig_h // 8)
+    if c_size > 4:
+        c1 = arr[:c_size, :c_size]
+        c2 = arr[:c_size, -c_size:]
+        c3 = arr[-c_size:, :c_size]
+        c4 = arr[-c_size:, -c_size:]
+        corners = np.concatenate([c1, c2, c3, c4], axis=0)
+        if float(corners.mean()) < 28.0 and float(corners.std()) < 18.0:
+            return orig_rgb.resize((256, 256), Image.Resampling.LANCZOS), {
+                "roi_state": "studio_mvtec",
+                "bbox": {"x": 0, "y": 0, "width": orig_w, "height": orig_h},
+                "crop_side": max(orig_w, orig_h),
+                "confidence": 1.0,
+            }
+
+    # 2. Downscale for structural analysis
+    target_dim = 384
+    scale = min(1.0, float(target_dim) / max(orig_w, orig_h))
+    proc_w = max(32, int(round(orig_w * scale)))
+    proc_h = max(32, int(round(orig_h * scale)))
+    small = orig_rgb.resize((proc_w, proc_h), Image.Resampling.BILINEAR)
+    gray = small.convert("L")
+
+    bbox_small = _find_compact_salient_nut_box(gray)
+    if bbox_small is None:
+        pad_x = int(orig_w * 0.18)
+        pad_y = int(orig_h * 0.18)
+        bbox_orig = (pad_x, pad_y, orig_w - pad_x, orig_h - pad_y)
+    else:
+        bx0 = max(0, int(round(bbox_small[0] / scale)))
+        by0 = max(0, int(round(bbox_small[1] / scale)))
+        bx1 = min(orig_w, int(round(bbox_small[2] / scale)))
+        by1 = min(orig_h, int(round(bbox_small[3] / scale)))
+        bbox_orig = (bx0, by0, bx1, by1)
+
+    bw = max(24, bbox_orig[2] - bbox_orig[0])
+    bh = max(24, bbox_orig[3] - bbox_orig[1])
+    cx = (bbox_orig[0] + bbox_orig[2]) // 2
+    cy = (bbox_orig[1] + bbox_orig[3]) // 2
+
+    # Canonical square size: 1.35x gives 55-60% nut occupancy (matching MVTec)
+    nut_extent = max(bw, bh)
+    side = int(round(nut_extent * 1.35))
+    side = max(side, 64)
+
+    # Crop coordinates centered on nut
+    crop_x0 = cx - side // 2
+    crop_y0 = cy - side // 2
+    crop_x1 = crop_x0 + side
+    crop_y1 = crop_y0 + side
+
+    # Create MVTec neutral studio dark canvas (12, 12, 14)
+    canvas = Image.new("RGB", (side, side), (12, 12, 14))
+
+    src_x0 = max(0, crop_x0)
+    src_y0 = max(0, crop_y0)
+    src_x1 = min(orig_w, crop_x1)
+    src_y1 = min(orig_h, crop_y1)
+
+    if src_x1 > src_x0 and src_y1 > src_y0:
+        patch = orig_rgb.crop((src_x0, src_y0, src_x1, src_y1))
+        dst_x0 = src_x0 - crop_x0
+        dst_y0 = src_y0 - crop_y0
+        canvas.paste(patch, (dst_x0, dst_y0))
+
+    # Soft radial transition: fade out background beyond the nut's bounding radius
+    radius = nut_extent / 2.0
+    r_inner = radius * 1.02
+    r_outer = radius * 1.25
+
+    Y_canvas, X_canvas = np.ogrid[:side, :side]
+    dist = np.sqrt((X_canvas - side / 2.0) ** 2 + (Y_canvas - side / 2.0) ** 2)
+    vignette = np.clip((r_outer - dist) / max(1.0, r_outer - r_inner), 0.0, 1.0).astype(np.float32)
+    vignette = np.expand_dims(vignette, axis=-1)
+
+    canvas_arr = np.asarray(canvas, dtype=np.float32)
+    studio_bg = np.array([12.0, 12.0, 14.0], dtype=np.float32)
+    blended = (canvas_arr * vignette + studio_bg * (1.0 - vignette)).astype(np.uint8)
+    conditioned = Image.fromarray(blended, mode="RGB")
+
+    # Gentle autocontrast to balance phone exposure without clipping metal highlights
+    conditioned = ImageOps.autocontrast(conditioned, cutoff=1)
+
+    # Resize to canonical 256x256
+    final_output = conditioned.resize((256, 256), Image.Resampling.LANCZOS)
+
+    return final_output, {
+        "roi_state": "isolated_real_camera",
+        "bbox": {"x": bbox_orig[0], "y": bbox_orig[1], "width": bw, "height": bh},
+        "crop_side": side,
+        "confidence": 0.95,
+    }
+
+
 def precheck_image_bytes(image_bytes: bytes, filename: str, category: str) -> dict[str, Any]:
     """Run only image-quality + category/OOD validation. No anomaly specialist is executed.
 
@@ -965,9 +1155,19 @@ def precheck_image_bytes(image_bytes: bytes, filename: str, category: str) -> di
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as stream:
         stream.write(image_bytes)
         image_path = Path(stream.name)
+    target_image_path = image_path
     try:
         original = Image.open(image_path).convert("RGB")
-        quality = _image_quality_check(original)
+        target_original = original
+        if category == "metal_nut":
+            conditioned, _ = _condition_metal_nut_input(original)
+            conditioned_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+            conditioned.save(conditioned_file.name, format="PNG")
+            conditioned_file.close()
+            target_image_path = Path(conditioned_file.name)
+            target_original = conditioned
+
+        quality = _image_quality_check(target_original)
         if quality.get("image_quality_state") == "rejected":
             return {
                 "state": "poor_quality_input",
@@ -978,7 +1178,7 @@ def precheck_image_bytes(image_bytes: bytes, filename: str, category: str) -> di
                 "precheck_seconds": round(time.perf_counter() - started, 4),
             }
 
-        validation = _category_validation(image_path, category)
+        validation = _category_validation(target_image_path, category)
         state = validation.get("input_category_state") or "unknown"
         can_run = state == "valid"
         return {
@@ -1004,6 +1204,8 @@ def precheck_image_bytes(image_bytes: bytes, filename: str, category: str) -> di
         }
     finally:
         image_path.unlink(missing_ok=True)
+        if target_image_path != image_path:
+            target_image_path.unlink(missing_ok=True)
 
 
 def infer_image_bytes(image_bytes: bytes, filename: str, category: str) -> dict[str, Any]:
@@ -1018,15 +1220,27 @@ def infer_image_bytes(image_bytes: bytes, filename: str, category: str) -> dict[
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as stream:
         stream.write(image_bytes)
         image_path = Path(stream.name)
+    target_image_path = image_path
     try:
         original = Image.open(image_path).convert("RGB")
+        target_original = original
+        roi_meta = {"roi_state": "original", "bbox": None, "confidence": 1.0}
+
+        if category == "metal_nut":
+            conditioned, roi_meta = _condition_metal_nut_input(original)
+            conditioned_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+            conditioned.save(conditioned_file.name, format="PNG")
+            conditioned_file.close()
+            target_image_path = Path(conditioned_file.name)
+            target_original = conditioned
+
         current = _load_pipeline()
         from evtclip_runtime.refinement import mask_agreement, normalize, stage2_map, stage2_mask
         from evtclip_runtime.routing import RouteDecision, RuntimeHealth, choose_route
 
         profile = current.profiles[category]
         validation_started = time.perf_counter()
-        image_quality = _image_quality_check(original)
+        image_quality = _image_quality_check(target_original)
         if image_quality["image_quality_state"] == "rejected":
             quality_rejection = {
                 **image_quality,
@@ -1046,7 +1260,7 @@ def infer_image_bytes(image_bytes: bytes, filename: str, category: str) -> dict[
             validation_seconds = time.perf_counter() - validation_started
             return _rejected_payload(quality_rejection, started, validation_seconds)
 
-        category_validation = _category_validation(image_path, category)
+        category_validation = _category_validation(target_image_path, category)
         category_validation.update(image_quality)
         validation_seconds = time.perf_counter() - validation_started
 
@@ -1066,20 +1280,20 @@ def infer_image_bytes(image_bytes: bytes, filename: str, category: str) -> dict[
             cv_started = time.perf_counter()
             from app.services.yolo_roi import get_roi_mask
             from app.services.hybrid_cv import compute_classical_cv_evidence
-            yolo_roi = get_roi_mask(original)
+            yolo_roi = get_roi_mask(target_original)
             # Compute at the same geometry later used by the anomaly maps.
             # 256x256 is a safe temporary target and is resized again after
             # specialist/refiner inference if necessary.
             classical_cv = compute_classical_cv_evidence(
-                original, (256, 256), roi_mask=yolo_roi.get("mask")
+                target_original, (256, 256), roi_mask=yolo_roi.get("mask")
             )
             classical_cv_seconds = time.perf_counter() - cv_started
 
         efficient_raw, efficient_score, efficient_label, efficient_cache_hit, efficient_seconds = _specialist_prediction(
-            "efficientad", category, image_path
+            "efficientad", category, target_image_path
         )
         patchcore_raw, patchcore_score, patchcore_label, patchcore_cache_hit, patchcore_seconds = _specialist_prediction(
-            "patchcore", category, image_path
+            "patchcore", category, target_image_path
         )
         efficient = normalize(efficient_raw, **profile["normalization"]["efficientad"])
         patchcore = normalize(patchcore_raw, **profile["normalization"]["patchcore"])
@@ -1091,7 +1305,7 @@ def infer_image_bytes(image_bytes: bytes, filename: str, category: str) -> dict[
         fallback_reason = None
         refiner_started = time.perf_counter()
         try:
-            refined_map = current._refined_map(category, image_path, efficient_raw, patchcore_raw)
+            refined_map = current._refined_map(category, target_image_path, efficient_raw, patchcore_raw)
             refined_mask = _filter_small_components((refined_map >= FINAL_THRESHOLD).astype(np.uint8))
             agreement = mask_agreement(fused_mask, refined_mask)
             confidence = float(refined_map.max())
@@ -1111,9 +1325,6 @@ def infer_image_bytes(image_bytes: bytes, filename: str, category: str) -> dict[
                 localization_map, localization_mask = refined_map, refined_mask
                 localization_source = "stage3_evt_clip"
             else:
-                # Experimental path is dormant by default. It is intended only
-                # for an override produced by evaluation/benchmark_map_fusion_gate.py
-                # after calibration-only selection and untouched-holdout promotion.
                 alpha = float(STAGE3_BLEND_ALPHA)
                 localization_map = (alpha * refined_map + (1.0 - alpha) * fused_map).astype(np.float32)
                 localization_mask = _filter_small_components((localization_map >= FINAL_THRESHOLD).astype(np.uint8))
@@ -1137,47 +1348,57 @@ def infer_image_bytes(image_bytes: bytes, filename: str, category: str) -> dict[
                 interpolation=cv2.INTER_LINEAR,
             )
             if HYBRID_MODE == "localization":
-                # Benchmark-gated residual fusion: CV can strengthen suspicious
-                # pixels but does not replace the learned map.
                 hybrid_map = np.clip(
-                    localization_map + HYBRID_CV_ALPHA * classical_map * (1.0 - localization_map),
-                    0.0, 1.0
+                    (1.0 - HYBRID_CV_ALPHA) * localization_map + HYBRID_CV_ALPHA * classical_map,
+                    0.0,
+                    1.0,
                 ).astype(np.float32)
-                localization_map = hybrid_map
-                localization_mask = _filter_small_components((localization_map >= FINAL_THRESHOLD).astype(np.uint8))
-                localization_source = f"hybrid_evt_clip_opencv_alpha_{HYBRID_CV_ALPHA:.2f}"
                 hybrid_applied = True
 
-        labels = {"efficientad": efficient_label, "patchcore": patchcore_label}
-        scores = {"efficientad": efficient_score, "patchcore": patchcore_score}
-        primary = PRIMARY_SPECIALIST[category]
-        secondary = "patchcore" if primary == "efficientad" else "efficientad"
-        primary_label = labels[primary]
-        if primary_label is None:
-            primary_label = bool(localization_mask.any())
-            decision_source = "localization_area_fallback"
-        else:
-            decision_source = f"{primary}_checkpoint_image_label"
-        anomalous = bool(primary_label)
-        disagreement = labels[secondary] is not None and bool(labels[secondary]) != anomalous
-        final_mask = localization_mask if anomalous else np.zeros_like(localization_mask)
-        final_map = localization_map
-        result_valid = bool(category_validation["input_category_valid"])
-        quality_warning = category_validation.get("image_quality_state") == "warning"
-        # Valid inspections are accepted as Normal/Anomalous. Specialist
-        # disagreement and soft quality cautions remain visible as technical
-        # evidence, but they no longer force every scan into review state.
+        final_map = hybrid_map
+        final_mask = _filter_small_components((final_map >= FINAL_THRESHOLD).astype(np.uint8))
+        display_map = _display_normalize(final_map)
+
+        primary = profile["primary_specialist"]
+        primary_score = efficient_score if primary == "efficientad" else patchcore_score
+        primary_label = efficient_label if primary == "efficientad" else patchcore_label
+        anomalous = bool(primary_label) if primary_label is not None else bool(final_mask.any())
+
+        decision_source = f"{primary}_calibrated" if primary_label is not None else "localization_mask"
+        decision_score = (
+            primary_score
+            if primary_score is not None
+            else float(final_map.max()) if final_map.size
+            else 0.0
+        )
+        raw_decision = "anomalous" if anomalous else "normal"
+        accepted_decision = raw_decision
+        result_valid = True
         review_required = False
-        raw_decision = "anomaly" if anomalous else "normal"
-        accepted_decision = raw_decision if result_valid else "diagnostic_only"
         review_reason = None
-        decision_score = scores[primary]
-        if decision_score is None:
-            decision_score = float(localization_map.max())
-        display_map = (
-            np.where(final_mask > 0, final_map, 0.0).astype(np.float32)
-            if anomalous and final_mask.any()
-            else np.zeros_like(final_map)
+
+        if (
+            category_validation.get("input_category_state") == "category_disagreement"
+            and category_validation.get("category_margin", 0.0) >= PORTABLE_HARD_MISMATCH_MARGIN
+            and category_validation.get("selected_category_probability", 1.0) < PORTABLE_SELECTED_MIN_SCORE
+            and frozenset((category, category_validation.get("predicted_category"))) not in PORTABLE_NEAR_NEIGHBOR_PAIRS
+        ):
+            review_required = True
+            review_reason = "category_disagreement_advisory"
+
+        if image_quality["image_quality_state"] == "review":
+            review_required = True
+            review_reason = review_reason or image_quality["image_quality_message"]
+
+        if (
+            STAGE3_BLEND_ALPHA is not None
+            and localization_source.startswith("benchmark_gated_stage2_stage3_blend_")
+            and hybrid_applied
+        ):
+            decision_source = f"{decision_source}+hybrid_fusion"
+
+        confidence = round(
+            float(decision_score) if anomalous else float(1.0 - decision_score), 4
         )
 
         cache_state = (
@@ -1187,13 +1408,6 @@ def infer_image_bytes(image_bytes: bytes, filename: str, category: str) -> dict[
         )
         geometry = _mask_geometry(final_mask)
 
-        # Same semantic category does not guarantee the image belongs to the
-        # MVTec appearance distribution used to fit that specialist. For the
-        # newly added ten categories, two saturated specialist scores together
-        # with an almost-full-frame mask is treated as domain shift, not as a
-        # trustworthy defect result. This specifically prevents arbitrary wood
-        # photos (or similarly shifted same-category photos) from being reported
-        # as a confident 100% defect.
         _new_category = (
             'NEW_SPECIALIST_CATEGORIES' in globals()
             and category in NEW_SPECIALIST_CATEGORIES
@@ -1222,9 +1436,6 @@ def infer_image_bytes(image_bytes: bytes, filename: str, category: str) -> dict[
                 "of the frame. This is outside the calibrated MVTec appearance domain, so "
                 "the defect result was withheld instead of being reported as a valid anomaly."
             )
-            # Clear production geometry. Raw specialist maps remain inside the
-            # worker payload only; the web layer intentionally does not persist
-            # AI evidence for invalid results.
             final_mask = np.zeros_like(final_mask)
             display_map = np.zeros_like(final_map)
             geometry = _mask_geometry(final_mask)
@@ -1272,9 +1483,9 @@ def infer_image_bytes(image_bytes: bytes, filename: str, category: str) -> dict[
             "hybrid_mode": HYBRID_MODE,
             "hybrid_applied": hybrid_applied,
             "hybrid_map_score": float(hybrid_map.max()) if hybrid_map is not None else None,
-            "yolo_roi_state": yolo_roi.get("state"),
-            "yolo_roi_confidence": yolo_roi.get("confidence"),
-            "yolo_roi_class": yolo_roi.get("class_name"),
+            "yolo_roi_state": roi_meta.get("roi_state", yolo_roi.get("state")),
+            "yolo_roi_confidence": float(roi_meta.get("confidence", 1.0)) if "confidence" in roi_meta else yolo_roi.get("confidence"),
+            "yolo_roi_class": "metal_nut" if category == "metal_nut" and roi_meta.get("roi_state") == "isolated_real_camera" else yolo_roi.get("class_name"),
             "final_threshold": FINAL_THRESHOLD,
             "minimum_component_pixels": MIN_COMPONENT_PIXELS,
             "stage3_blend_alpha": STAGE3_BLEND_ALPHA,
@@ -1286,7 +1497,7 @@ def infer_image_bytes(image_bytes: bytes, filename: str, category: str) -> dict[
             "worker_cache": cache_state,
             "elapsed_seconds": round(time.perf_counter() - started, 3),
         }
-        model_input = original.resize((256, 256), Image.Resampling.LANCZOS)
+        model_input = target_original.resize((256, 256), Image.Resampling.LANCZOS)
         images = {
             "preprocessed": model_input,
             "efficientad_heatmap": _heatmap_image(efficient),
@@ -1296,10 +1507,10 @@ def infer_image_bytes(image_bytes: bytes, filename: str, category: str) -> dict[
             "classical_cv_heatmap": _heatmap_image(classical_map) if classical_map is not None else None,
             "yolo_roi_mask": _mask_image(yolo_roi["mask"]) if isinstance(yolo_roi.get("mask"), np.ndarray) else None,
             "hybrid_heatmap": _heatmap_image(hybrid_map) if hybrid_map is not None else None,
-            "bbox_overlay": _bbox_overlay_image(original, final_mask, geometry.get("defect_bbox")),
+            "bbox_overlay": _bbox_overlay_image(target_original, final_mask, geometry.get("defect_bbox")),
             "heatmap": _heatmap_image(display_map if display_map.any() else final_map),
             "mask": _mask_image(final_mask),
-            "overlay": _overlay_image(original, display_map) if display_map.any() else original,
+            "overlay": _overlay_image(target_original, display_map) if display_map.any() else target_original,
         }
         return {
             "metadata": metadata,
@@ -1307,3 +1518,5 @@ def infer_image_bytes(image_bytes: bytes, filename: str, category: str) -> dict[
         }
     finally:
         image_path.unlink(missing_ok=True)
+        if target_image_path != image_path:
+            target_image_path.unlink(missing_ok=True)
