@@ -9,6 +9,7 @@ import Modal from '../../components/common/Modal';
 import CameraCapture from '../../components/detection/CameraCapture';
 import InspectionRunAnimation from '../../components/detection/InspectionRunAnimation';
 import CategoryExampleGuide, { CATEGORY_GUIDANCE } from '../../components/detection/CategoryExampleGuide';
+import InspectionResultViewer from '../../components/detection/InspectionResultViewer';
 import {
     UploadCloud, FileText, Layers, Eye,
     ShieldCheck, Cpu, AlertTriangle, CheckCircle2,
@@ -350,12 +351,13 @@ const Detection = () => {
                         <Card><span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Primary specialist</span><b className="mt-2 block text-sm">{friendlySpecialist(result.primarySpecialist || category)}</b><p className="mt-2 text-[10px] text-slate-400">Image-level decision source</p></Card>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <Card title="Original Image" subtitle="Uploaded/captured source" padding={false}><div className="aspect-[4/3] w-full bg-[#010120] flex items-center justify-center overflow-hidden border-t border-slate-100 dark:border-slate-800"><img src={result.originalImage} alt="Original" className="max-w-full max-h-full object-contain" /></div></Card>
-                        <Card title="Anomaly Heatmap" subtitle="Backend-generated localization evidence" padding={false}><div className="aspect-[4/3] w-full bg-[#010120] flex items-center justify-center overflow-hidden border-t border-slate-100 dark:border-slate-800">{showHeatmap && result.heatmapImage ? <img src={result.heatmapImage} alt="Heatmap" className="max-w-full max-h-full object-contain" /> : <span className="text-xs text-slate-500">Heatmap hidden</span>}</div></Card>
-                        <Card title="Segmentation Mask" subtitle="Calibrated production mask" padding={false}><div className="aspect-[4/3] w-full bg-[#010120] flex items-center justify-center overflow-hidden border-t border-slate-100 dark:border-slate-800">{showMask && result.maskImage ? <img src={result.maskImage} alt="Segmentation mask" className="max-w-full max-h-full object-contain" /> : <span className="text-xs text-slate-500">Mask hidden</span>}</div></Card>
-                        <Card title="Overlay Image" subtitle="Backend-generated overlay" padding={false}><div className="aspect-[4/3] w-full bg-[#010120] flex items-center justify-center overflow-hidden border-t border-slate-100 dark:border-slate-800">{showOverlay && result.overlayImage ? <img src={result.overlayImage} alt="Overlay" className="max-w-full max-h-full object-contain" /> : <span className="text-xs text-slate-500">Overlay hidden</span>}</div></Card>
-                    </div>
+                    <InspectionResultViewer
+                        result={result}
+                        category={category}
+                        showHeatmap={showHeatmap}
+                        showMask={showMask}
+                        showOverlay={showOverlay}
+                    />
 
                     {!legacyStage3Categories.includes(category) && (
                         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">

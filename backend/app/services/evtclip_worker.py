@@ -1166,6 +1166,14 @@ def precheck_image_bytes(image_bytes: bytes, filename: str, category: str) -> di
             conditioned_file.close()
             target_image_path = Path(conditioned_file.name)
             target_original = conditioned
+        elif category == "bottle":
+            from app.services.bottle_conditioner import condition_bottle_input
+            conditioned, _ = condition_bottle_input(original)
+            conditioned_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+            conditioned.save(conditioned_file.name, format="PNG")
+            conditioned_file.close()
+            target_image_path = Path(conditioned_file.name)
+            target_original = conditioned
 
         quality = _image_quality_check(target_original)
         if quality.get("image_quality_state") == "rejected":
@@ -1228,6 +1236,14 @@ def infer_image_bytes(image_bytes: bytes, filename: str, category: str) -> dict[
 
         if category == "metal_nut":
             conditioned, roi_meta = _condition_metal_nut_input(original)
+            conditioned_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+            conditioned.save(conditioned_file.name, format="PNG")
+            conditioned_file.close()
+            target_image_path = Path(conditioned_file.name)
+            target_original = conditioned
+        elif category == "bottle":
+            from app.services.bottle_conditioner import condition_bottle_input
+            conditioned, roi_meta = condition_bottle_input(original)
             conditioned_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
             conditioned.save(conditioned_file.name, format="PNG")
             conditioned_file.close()
@@ -1485,7 +1501,7 @@ def infer_image_bytes(image_bytes: bytes, filename: str, category: str) -> dict[
             "hybrid_map_score": float(hybrid_map.max()) if hybrid_map is not None else None,
             "yolo_roi_state": roi_meta.get("roi_state", yolo_roi.get("state")),
             "yolo_roi_confidence": float(roi_meta.get("confidence", 1.0)) if "confidence" in roi_meta else yolo_roi.get("confidence"),
-            "yolo_roi_class": "metal_nut" if category == "metal_nut" and roi_meta.get("roi_state") == "isolated_real_camera" else yolo_roi.get("class_name"),
+            "yolo_roi_class": category if category in ("metal_nut", "bottle") and roi_meta.get("roi_state") == "isolated_real_camera" else yolo_roi.get("class_name"),
             "final_threshold": FINAL_THRESHOLD,
             "minimum_component_pixels": MIN_COMPONENT_PIXELS,
             "stage3_blend_alpha": STAGE3_BLEND_ALPHA,
