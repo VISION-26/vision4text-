@@ -313,6 +313,14 @@ export const DetectionProvider = ({ children }) => {
                 }
 
                 if (job.status === 'complete' && job.detection) {
+                    console.log('[7] frontend response received:', {
+                        id: job.detection.id,
+                        category: job.detection.category,
+                        prediction: job.detection.prediction,
+                        primary_specialist: job.detection.primary_specialist,
+                        anomaly_score: job.detection.anomaly_score,
+                    });
+                    console.log('[8] frontend response keys =', Object.keys(job.detection));
                     // Move the UI to a terminal state before downloading optional visual evidence.
                     // Asset retrieval must not make a completed job look like it is checking again.
                     setCurrentJob((value) => value ? { ...value, status: 'complete', detectionId: job.detection.id } : value);

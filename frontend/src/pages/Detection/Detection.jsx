@@ -76,6 +76,19 @@ const Detection = () => {
     }, []);
 
     useEffect(() => {
+        if (result) {
+            console.log('[9] rendering final result:', {
+                id: result.id,
+                prediction: result.prediction,
+                primarySpecialist: result.primarySpecialist,
+                anomalyScore: result.anomalyScore,
+                confidence: result.confidence,
+                decisionSource: result.decisionSource,
+            });
+        }
+    }, [result]);
+
+    useEffect(() => {
         if (!datasets.some((d) => String(d.id) === String(selectedDatasetId))) {
             setSelectedDatasetId(String(datasets[0]?.id || '0'));
         }
@@ -554,7 +567,7 @@ const Detection = () => {
             <Modal
                 isOpen={safetyModalOpen && Boolean(result)}
                 onClose={() => setSafetyModalOpen(false)}
-                title={domainShift ? 'Outside Calibrated Visual Domain' : poorQualityInput ? 'Image Quality Too Poor' : unsupportedInput ? 'Unsupported Image' : wrongCategory ? 'Product Category Mismatch' : 'Input Validation Failed'}
+                title={domainShift ? 'Outside Calibrated Visual Domain' : poorQualityInput ? 'Image Quality Too Poor' : unsupportedInput ? 'Unsupported Image' : wrongCategory ? 'Incorrect Product Category' : 'Input Validation Failed'}
                 size="md"
                 actions={(
                     <>

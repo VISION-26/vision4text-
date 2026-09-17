@@ -1352,6 +1352,8 @@ def infer_image_bytes(image_bytes: bytes, filename: str, category: str) -> dict[
             fallback_reason = type(error).__name__
         refiner_seconds = time.perf_counter() - refiner_started
 
+        print(f"[1] AI processing complete: efficient_score={efficient_score}, patchcore_score={patchcore_score}, route={getattr(route, 'value', route)}", flush=True)
+
         if route == RouteDecision.STAGE3_STABLE and refined_map is not None:
             if STAGE3_BLEND_ALPHA is None:
                 localization_map, localization_mask = refined_map, refined_mask
@@ -1390,8 +1392,13 @@ def infer_image_bytes(image_bytes: bytes, filename: str, category: str) -> dict[
         final_map = hybrid_map
         final_mask = _filter_small_components((final_map >= FINAL_THRESHOLD).astype(np.uint8))
         display_map = _display_normalize(final_map)
+        print(f"[2] heatmap complete: final_map_shape={final_map.shape}, display_map_max={float(display_map.max()) if display_map.size else 0.0}", flush=True)
 
-        primary = profile["primary_specialist"]
+        primary = (
+            profile.get("primary_specialist")
+            or profile.get("primary_model")
+            or PRIMARY_SPECIALIST.get(category, "efficientad")
+        )
         primary_score = efficient_score if primary == "efficientad" else patchcore_score
         primary_label = efficient_label if primary == "efficientad" else patchcore_label
         anomalous = bool(primary_label) if primary_label is not None else bool(final_mask.any())
@@ -1403,6 +1410,7 @@ def infer_image_bytes(image_bytes: bytes, filename: str, category: str) -> dict[
             else float(final_map.max()) if final_map.size
             else 0.0
         )
+        print(f"[3] final model data available: primary_specialist={primary}, decision_source={decision_source}, decision_score={decision_score}, anomalous={anomalous}", flush=True)
         raw_decision = "anomalous" if anomalous else "normal"
         accepted_decision = raw_decision
         result_valid = True
@@ -1481,6 +1489,7 @@ def infer_image_bytes(image_bytes: bytes, filename: str, category: str) -> dict[
             review_required = True
             review_reason = "implausible_full_frame_localization"
         stage3_score = float(refined_map.max()) if refined_map is not None else None
+        print("[4] building response: assembling metadata dictionary and image payload", flush=True)
         metadata = {
             **category_validation,
             "status": "complete",
@@ -1544,6 +1553,8 @@ def infer_image_bytes(image_bytes: bytes, filename: str, category: str) -> dict[
             "mask": _mask_image(final_mask),
             "overlay": _overlay_image(target_original, display_map) if display_map.any() else target_original,
         }
+        print(f"[5] response keys = {sorted(metadata.keys())}", flush=True)
+        print(f"[6] sending response: returning payload with metadata and {len(images)} encoded images", flush=True)
         return {
             "metadata": metadata,
             "images_base64_png": {name: _encode_png(image) for name, image in images.items()},

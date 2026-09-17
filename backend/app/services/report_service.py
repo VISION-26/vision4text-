@@ -10,6 +10,7 @@ from reportlab.lib.units import inch
 from reportlab.platypus import (
     HRFlowable,
     Image as RLImage,
+    KeepTogether,
     PageBreak,
     Paragraph,
     SimpleDocTemplate,
@@ -133,7 +134,23 @@ class ReportService:
                 ("PADDING", (0, 0), (-1, 0), 4.5),
                 ("PADDING", (0, 1), (-1, 1), 5),
             ]))
-            return table
+            return KeepTogether([table])
+
+        def image_single(title, rel_path, image_height=145):
+            data = [
+                [Paragraph(f"<b>{safe_text(title)}</b>", label)],
+                [image_flow(rel_path, width=261, height=image_height)],
+            ]
+            table = Table(data, colWidths=[522])
+            table.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#EEF2F7")),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("GRID", (0, 0), (-1, -1), 0.45, LINE),
+                ("PADDING", (0, 0), (-1, 0), 4.5),
+                ("PADDING", (0, 1), (-1, 1), 5),
+            ]))
+            return KeepTogether([table])
 
         def page_decor(canvas, _doc):
             canvas.saveState()
@@ -277,7 +294,7 @@ class ReportService:
                 Paragraph(f"<b>{safe_text(lt)}</b>", label), Paragraph(safe_text(lv), small),
                 Paragraph(f"<b>{safe_text(rt)}</b>", label), Paragraph(safe_text(rv), small),
             ])
-        meta_table = Table(meta_data, colWidths=[84, 177, 84, 177])
+        meta_table = Table(meta_data, colWidths=[96, 165, 96, 165])
         meta_table.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, -1), SOFT),
             ("VALIGN", (0, 0), (-1, -1), "TOP"),
@@ -293,8 +310,36 @@ class ReportService:
             image_pair("Segmentation mask", detection.mask_path if detection.result_valid else None, "Final overlay", detection.overlay_path if detection.result_valid else None, image_height=132),
         ])
 
+        DISABLED_STATES = {
+            "",
+            "off",
+            "disabled",
+            "none",
+            "false",
+            "0",
+            "not_run",
+            "not run",
+        }
+
+        hybrid_mode_str = str(detection.hybrid_mode or "").strip().lower()
+        hybrid_active = bool(detection.hybrid_applied) or (hybrid_mode_str not in DISABLED_STATES)
+        hybrid_available = hybrid_active and bool(
+            detection.hybrid_heatmap_path and absolute_upload_path(detection.hybrid_heatmap_path)
+        )
+
+        opencv_available = (hybrid_mode_str not in DISABLED_STATES) and bool(
+            detection.classical_cv_heatmap_path and absolute_upload_path(detection.classical_cv_heatmap_path)
+        )
+
+        yolo_state_str = str(detection.yolo_roi_state or "").strip().lower()
+        yolo_available = (yolo_state_str not in DISABLED_STATES) and bool(
+            detection.yolo_roi_mask_path and absolute_upload_path(detection.yolo_roi_mask_path)
+        )
+
+        any_optional_active = hybrid_active or opencv_available or yolo_available
+
         if detection.result_valid:
-            elements.extend([
+            model_stage_elements = [
                 PageBreak(),
                 Paragraph("Model-stage evidence", section_heading),
                 Paragraph("Stored worker outputs are shown in pipeline order. These are not browser-generated replacements.", small),
@@ -304,11 +349,37 @@ class ReportService:
                 image_pair("PatchCore heatmap", detection.patchcore_heatmap_path, "Stage-2 fusion heatmap", detection.stage2_heatmap_path, image_height=145),
                 Spacer(1, 6),
                 image_pair("Stage-3 EVT-CLIP heatmap", detection.stage3_heatmap_path, "Accepted final heatmap", detection.heatmap_path, image_height=145),
-                Spacer(1, 6),
-                image_pair("OpenCV evidence (benchmark-gated)", detection.classical_cv_heatmap_path, "Hybrid map", detection.hybrid_heatmap_path, image_height=145),
-                Spacer(1, 6),
-                image_pair("YOLO / ROI mask (optional)", detection.yolo_roi_mask_path, "Accepted final heatmap", detection.heatmap_path, image_height=145),
-            ])
+            ]
+
+            if opencv_available and hybrid_available:
+                model_stage_elements.extend([
+                    Spacer(1, 6),
+                    image_pair("OpenCV evidence (benchmark-gated)", detection.classical_cv_heatmap_path, "Hybrid map", detection.hybrid_heatmap_path, image_height=145),
+                ])
+            elif opencv_available:
+                model_stage_elements.extend([
+                    Spacer(1, 6),
+                    image_single("OpenCV evidence (benchmark-gated)", detection.classical_cv_heatmap_path, image_height=145),
+                ])
+            elif hybrid_available:
+                model_stage_elements.extend([
+                    Spacer(1, 6),
+                    image_single("Hybrid map", detection.hybrid_heatmap_path, image_height=145),
+                ])
+
+            if yolo_available:
+                model_stage_elements.extend([
+                    Spacer(1, 6),
+                    image_single("YOLO / ROI mask (optional)", detection.yolo_roi_mask_path, image_height=145),
+                ])
+
+            if not (opencv_available or hybrid_available or yolo_available):
+                model_stage_elements.extend([
+                    Spacer(1, 8),
+                    Paragraph("Optional OpenCV/YOLO evidence was disabled or not produced for this inspection.", small),
+                ])
+
+            elements.extend(model_stage_elements)
 
         elements.extend([
             PageBreak(),
@@ -325,23 +396,51 @@ class ReportService:
             ["Connected regions", detection.defect_component_count or 0, "Bounding box", bbox or "No accepted defect pixels"],
             ["EfficientAD score", fmt_float(detection.efficientad_image_score), "PatchCore score", fmt_float(detection.patchcore_image_score)],
             ["Stage-2 peak", fmt_float(detection.stage2_map_score), "Stage-3 peak", fmt_float(detection.stage3_map_score)],
-            ["OpenCV evidence", fmt_float(detection.classical_cv_score), "Hybrid map peak", fmt_float(detection.hybrid_map_score)],
-            ["Hybrid mode", detection.hybrid_mode or "off", "Fusion applied", "Yes" if detection.hybrid_applied else "No"],
-            ["YOLO ROI", detection.yolo_roi_state or "disabled", "YOLO confidence", fmt_float(detection.yolo_roi_confidence)],
-            ["CV defect hint", detection.classical_cv_defect_hint or "-", "CV time", fmt_float(detection.classical_cv_seconds, 3, " s")],
             ["Map agreement", fmt_float((detection.map_agreement or 0.0) * 100, 2, "%") if detection.map_agreement is not None else "-", "Threshold", f"{threshold:.3f}"],
             ["Validation time", fmt_float(detection.validation_seconds, 3, " s"), "EfficientAD time", fmt_float(detection.efficientad_seconds, 3, " s")],
             ["PatchCore time", fmt_float(detection.patchcore_seconds, 3, " s"), "EVT-CLIP time", fmt_float(detection.refiner_seconds, 3, " s")],
             ["Image quality", detection.image_quality_state, "Quality notice", detection.image_quality_message],
             ["Category validator", friendly_validator, "Category notice", detection.category_validation_message],
         ]
+
+        if not any_optional_active:
+            analysis_rows.append([
+                "Optional CV/YOLO hybrid", "Disabled",
+                "Hybrid fusion applied", "No",
+            ])
+        else:
+            if hybrid_active:
+                analysis_rows.append([
+                    "Hybrid mode", detection.hybrid_mode or "active",
+                    "Hybrid fusion applied", "Yes" if detection.hybrid_applied else "No",
+                ])
+                if detection.hybrid_applied and detection.hybrid_map_score is not None:
+                    analysis_rows.append([
+                        "Hybrid map peak", fmt_float(detection.hybrid_map_score),
+                        "Hybrid status", "Active fusion",
+                    ])
+            if opencv_available or (detection.classical_cv_score is not None):
+                analysis_rows.append([
+                    "OpenCV evidence", fmt_float(detection.classical_cv_score),
+                    "CV defect hint", detection.classical_cv_defect_hint or "-",
+                ])
+                if detection.classical_cv_seconds:
+                    analysis_rows.append([
+                        "CV time", fmt_float(detection.classical_cv_seconds, 3, " s"),
+                        "-", "-",
+                    ])
+            if yolo_available or (detection.yolo_roi_state and detection.yolo_roi_state not in DISABLED_STATES):
+                analysis_rows.append([
+                    "YOLO ROI", detection.yolo_roi_state or "active",
+                    "YOLO confidence", fmt_float(detection.yolo_roi_confidence),
+                ])
         analysis_data = []
         for lt, lv, rt, rv in analysis_rows:
             analysis_data.append([
                 Paragraph(f"<b>{safe_text(lt)}</b>", label), Paragraph(safe_text(lv), small),
                 Paragraph(f"<b>{safe_text(rt)}</b>", label), Paragraph(safe_text(rv), small),
             ])
-        analysis_table = Table(analysis_data, colWidths=[84, 177, 84, 177])
+        analysis_table = Table(analysis_data, colWidths=[115, 146, 115, 146])
         analysis_table.setStyle(TableStyle([
             ("VALIGN", (0, 0), (-1, -1), "TOP"),
             ("BACKGROUND", (0, 0), (-1, -1), SOFT),
@@ -367,7 +466,7 @@ class ReportService:
         policy_table = Table([
             [Paragraph("<b>Ground-truth policy</b>", label), Paragraph(ground_truth_copy, small)],
             [Paragraph("<b>System context</b>", label), Paragraph(
-                "Production scope: Bottle, Cable, Capsule, Metal Nut and Pill. The live hybrid pipeline uses category specialists, calibrated Stage-2 fusion and EVT-CLIP Stage-3 refinement. Published EVT-CLIP paper metrics and medical zero-shot experiments are kept separate from this inspection record.",
+                "Production scope: Bottle, Cable, Capsule, Metal Nut and Pill. The live production pipeline uses category specialists, calibrated Stage-2 fusion and EVT-CLIP Stage-3 refinement. Optional OpenCV/YOLO hybrid evidence is benchmark-gated and is omitted when disabled. Published EVT-CLIP paper metrics and medical zero-shot experiments remain separate from this inspection record.",
                 small,
             )],
         ], colWidths=[105, 417])
