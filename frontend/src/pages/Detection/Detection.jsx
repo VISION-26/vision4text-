@@ -7,7 +7,6 @@ import SectionTitle from '../../components/common/SectionTitle';
 import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
 import CameraCapture from '../../components/detection/CameraCapture';
-import CameraPresetSelector from '../../components/detection/CameraPresetSelector';
 import InspectionRunAnimation from '../../components/detection/InspectionRunAnimation';
 import CategoryExampleGuide, { CATEGORY_GUIDANCE } from '../../components/detection/CategoryExampleGuide';
 import InspectionResultViewer from '../../components/detection/InspectionResultViewer';
@@ -247,16 +246,6 @@ const Detection = () => {
                     )}
                     <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
                         <CameraCapture onCapture={handleCameraCapture} disabled={isRunning} />
-                    </div>
-                    <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
-                        <CameraPresetSelector
-                            onSelectPreset={(file, presetCategory, autoInspect) => {
-                                setCategory(presetCategory);
-                                selectImage(file);
-                                if (autoInspect) execute(file, presetCategory);
-                            }}
-                            disabled={isRunning}
-                        />
                     </div>
                 </Card>
 

@@ -1,4 +1,7 @@
 import asyncio
+import logging
+
+logger = logging.getLogger('vision_text')
 import base64
 import os
 import uuid
@@ -441,19 +444,31 @@ async def poll_detection_job(job_id: int, current_user: User = Depends(get_curre
         "bbox_overlay_path": None,
     }
     try:
+        # [RESULT-1] worker payload received
+        logger.info("[RESULT-1] worker payload received for job_id=%s, category=%s, payload_type=%s", job.id, job.category, type(payload).__name__)
         if not isinstance(payload, dict) or not isinstance(payload.get("metadata"), dict):
             raise ValueError("CPU worker returned a malformed payload")
+
+        # [RESULT-2] payload structure validated
+        logger.info("[RESULT-2] payload structure validated for job_id=%s", job.id)
         meta = payload["metadata"]
         result_valid = bool(meta.get("result_valid", False))
-        # Defense in depth: even if a future worker accidentally returns maps
-        # with an invalid result, the web layer will not persist them.
+
+        # [RESULT-3] metadata accepted
+        logger.info("[RESULT-3] metadata accepted for job_id=%s, result_valid=%s, metadata_keys=%s", job.id, result_valid, sorted(list(meta.keys())))
+
+        # [RESULT-4] image evidence decoded/saved
         if result_valid:
             images = payload.get("images_base64_png") or {}
             if not isinstance(images, dict):
                 raise ValueError("CPU worker returned malformed image evidence")
+            logger.info("[RESULT-4] image evidence decoding for job_id=%s, count=%d, keys=%s", job.id, len(images), sorted(list(images.keys())))
             assets = _save_job_assets(images)
+        else:
+            logger.info("[RESULT-4] image evidence skipped (result_valid=False) for job_id=%s", job.id)
 
-        raw_decision = meta.get("raw_anomaly_decision")
+        # [RESULT-5] decision mapped
+        raw_decision = str(meta.get("raw_anomaly_decision") or "").strip().lower()
         if raw_decision == "invalid":
             prediction = "Invalid Input"
         elif raw_decision in ("anomaly", "anomalous"):
@@ -461,21 +476,25 @@ async def poll_detection_job(job_id: int, current_user: User = Depends(get_curre
         elif raw_decision == "normal":
             prediction = "Normal"
         else:
-            raise ValueError("CPU worker returned an unknown decision state")
+            raise ValueError(f"CPU worker returned an unknown decision state: {raw_decision!r}")
+        logger.info("[RESULT-5] decision mapped for job_id=%s: raw=%r -> prediction=%s", job.id, raw_decision, prediction)
 
+        # [RESULT-6] numeric fields normalized
         score = float(meta.get("score") or 0.0)
         confidence_value = meta.get("confidence")
-        # Do not synthesize confidence from anomaly score; they are different
-        # quantities. Missing confidence is recorded conservatively as zero.
         confidence = float(confidence_value) if confidence_value is not None else 0.0
+        elapsed_seconds = float(meta.get("elapsed_seconds") or 0.0)
+        final_threshold = float(meta.get("final_threshold", 0.267))
+        logger.info("[RESULT-6] numeric fields normalized for job_id=%s: score=%.4f, confidence=%.4f, elapsed=%.3fs, threshold=%.4f", job.id, score, confidence, elapsed_seconds, final_threshold)
+
         result = {
             "original_image_path": job.image_path,
             **assets,
             "anomaly_score": score,
             "confidence": confidence,
             "prediction": prediction,
-            "inference_time": float(meta.get("elapsed_seconds") or 0.0),
-            "threshold": float(meta.get("final_threshold", 0.267)),
+            "inference_time": elapsed_seconds,
+            "threshold": final_threshold,
             "result_valid": result_valid,
             "review_required": bool(meta.get("review_required", True)),
             "review_reason": meta.get("review_reason"),
@@ -516,12 +535,26 @@ async def poll_detection_job(job_id: int, current_user: User = Depends(get_curre
             "defect_bbox_width": (meta.get("defect_bbox") or {}).get("width") if isinstance(meta.get("defect_bbox"), dict) else None,
             "defect_bbox_height": (meta.get("defect_bbox") or {}).get("height") if isinstance(meta.get("defect_bbox"), dict) else None,
         }
+
+        # [RESULT-7] Detection object constructed
+        logger.info("[RESULT-7] Detection object constructed for job_id=%s, primary_specialist=%s", job.id, result.get("primary_specialist"))
         req = DetectionRequest(image_path=job.image_path, dataset_name=job.dataset_name, category=job.category, threshold=job.threshold)
         detection = await _store_detection(db, job.user_id, req, result)
         job.status = "complete"
         job.detection_id = detection.id
+
+        # [RESULT-8] DB flush/commit complete
         await db.commit()
+        logger.info("[RESULT-8] DB commit complete for job_id=%s, detection_id=%s", job.id, detection.id)
+
+        action = "REJECT_INPUT" if detection.prediction == "Invalid Input" else "RUN_DETECTION"
+        await HistoryService.log_action(db, job.user_id, action, f"CPU detection ID {detection.id} completed. Result: {detection.prediction}")
+
+        # [RESULT-9] response returned
+        logger.info("[RESULT-9] response returned for job_id=%s, detection_id=%s, prediction=%s", job.id, detection.id, detection.prediction)
+        return DetectionJobResponse(job_id=job.id, call_id=job.call_id, status="complete", detection=detection)
     except Exception as exc:
+        logger.exception("Detection result processing failed for job_id=%s, category=%s: %s", job_id, getattr(job, "category", "unknown"), exc)
         _cleanup_job_assets(assets)
         try:
             await db.rollback()
