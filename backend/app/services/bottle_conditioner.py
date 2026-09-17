@@ -96,7 +96,9 @@ def condition_bottle_input(image: Image.Image) -> Tuple[Image.Image, dict[str, A
         c3 = arr[-c_size:, :c_size]
         c4 = arr[-c_size:, -c_size:]
         corners = np.concatenate([c1, c2, c3, c4], axis=0)
-        if float(corners.mean()) < 28.0 and float(corners.std()) < 18.0:
+        c_mean = float(corners.mean())
+        c_std = float(corners.std())
+        if (c_mean < 28.0 and c_std < 18.0) or (c_mean > 200.0 and c_std < 25.0):
             return orig_rgb.resize((256, 256), Image.Resampling.LANCZOS), {
                 "roi_state": "studio_mvtec",
                 "bbox": {"x": 0, "y": 0, "width": orig_w, "height": orig_h},
