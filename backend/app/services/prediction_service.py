@@ -75,7 +75,7 @@ class PredictionService:
         raw_decision = meta.get("raw_anomaly_decision")
         if raw_decision == "invalid":
             prediction = "Invalid Input"
-        elif raw_decision == "anomaly":
+        elif raw_decision in ("anomaly", "anomalous"):
             prediction = "Anomalous"
         else:
             prediction = "Normal"

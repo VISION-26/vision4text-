@@ -456,7 +456,7 @@ async def poll_detection_job(job_id: int, current_user: User = Depends(get_curre
         raw_decision = meta.get("raw_anomaly_decision")
         if raw_decision == "invalid":
             prediction = "Invalid Input"
-        elif raw_decision == "anomaly":
+        elif raw_decision in ("anomaly", "anomalous"):
             prediction = "Anomalous"
         elif raw_decision == "normal":
             prediction = "Normal"

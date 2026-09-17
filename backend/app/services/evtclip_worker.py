@@ -1411,7 +1411,7 @@ def infer_image_bytes(image_bytes: bytes, filename: str, category: str) -> dict[
             else 0.0
         )
         print(f"[3] final model data available: primary_specialist={primary}, decision_source={decision_source}, decision_score={decision_score}, anomalous={anomalous}", flush=True)
-        raw_decision = "anomalous" if anomalous else "normal"
+        raw_decision = "anomaly" if anomalous else "normal"
         accepted_decision = raw_decision
         result_valid = True
         review_required = False
