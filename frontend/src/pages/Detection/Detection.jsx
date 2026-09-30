@@ -19,14 +19,14 @@ import {
 } from 'lucide-react';
 
 const fallbackSupportedCategories = ['bottle', 'cable', 'capsule', 'metal_nut', 'pill'];
-const knownCategoryOrder = ['bottle', 'cable', 'capsule', 'carpet', 'grid', 'hazelnut', 'leather', 'metal_nut', 'pill', 'screw', 'tile', 'toothbrush', 'transistor', 'wood', 'zipper'];
+const knownCategoryOrder = ['bottle', 'cable', 'capsule', 'metal_nut', 'pill'];
 const CALIBRATED_THRESHOLD = 0.267;
 const legacyStage3Categories = ['bottle', 'cable', 'capsule', 'metal_nut', 'pill'];
 const friendlyRoute = (value) => ({ stage3_stable: 'Stable Stage-3 refinement', stage2_fallback: 'Stage-2 fallback', specialist_only: 'Specialist-only route' }[value] || 'Recorded route');
 const friendlyCache = (value) => ({ cold_pair: 'First run · specialist pair loaded', warm_pair: 'Warm pair · models reused', partial_warm: 'Partially warm' }[value] || 'Runtime cache state');
 const friendlyDecisionSource = (value) => value?.includes('patchcore') ? 'PatchCore specialist decision' : value?.includes('efficientad') ? 'EfficientAD specialist decision' : value === 'localization_area_fallback' ? 'Localization fallback decision' : 'Recorded backend decision';
 const friendlyLocalization = (value) => value?.includes('stage3') ? 'EVT-CLIP Stage-3 localization' : value?.includes('stage2') ? 'Stage-2 fused localization' : 'Recorded localization path';
-const friendlySpecialist = (value) => value === 'efficientad' ? 'EfficientAD' : value === 'patchcore' ? 'PatchCore' : labelCategory(value).replace(/\b\w/g, (c) => c.toUpperCase());
+const friendlySpecialist = (value) => value === 'efficientad' ? 'EfficientAD' : value === 'patchcore' ? 'PatchCore' : labelCategory(value);
 
 const Detection = () => {
     const {
@@ -211,7 +211,7 @@ const Detection = () => {
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card title="1. Select Input Source" subtitle="Upload an image to begin inspection">
+                <Card title="1. Select Input Source" subtitle="Upload an image for anomaly inspection.">
                     {imagePreview ? (
                         <div className="relative group overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-950 aspect-[4/3] flex items-center justify-center rounded-lg">
                             <img src={imagePreview} alt="Selected input" className="max-h-full max-w-full object-contain" />
@@ -248,7 +248,7 @@ const Detection = () => {
                                 <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">PRODUCT MODEL</label>
                                 <span className="text-[9px] text-slate-400">{supportedCategories.length} available</span>
                             </div>
-                            <select value={category} onChange={(e) => handleCategoryChange(e.target.value)} className="w-full px-3 py-2.5 text-xs border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#010120] text-slate-800 dark:text-slate-100 focus:outline-none capitalize rounded-md">
+                            <select value={category} onChange={(e) => handleCategoryChange(e.target.value)} className="w-full px-3 py-2.5 text-xs border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#010120] text-slate-800 dark:text-slate-100 focus:outline-none rounded-md">
                                 {supportedCategories.map((c) => <option key={c} value={c}>{labelCategory(c)}</option>)}
                             </select>
                             <p className="pt-1 text-[9px] leading-4 text-slate-400">The list follows the model profiles reported by the active backend. Newly trained categories appear automatically after the backend registry is updated.</p>
@@ -257,7 +257,7 @@ const Detection = () => {
                         <CategoryExampleGuide category={category} onSelectFile={selectImage} />
                         <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-[#12122a]">
                             <div className="grid grid-cols-2 gap-2 text-[10px]">
-                                <div><span className="block text-slate-400">Selected category</span><b className="capitalize">{labelCategory(category)}</b></div>
+                                <div><span className="block text-slate-400">Selected category</span><b>{labelCategory(category)}</b></div>
                                 <div><span className="block text-slate-400">Validation policy</span><b>Accept / Reject</b></div>
                             </div>
                             <details className="mt-3 border-t border-slate-200 pt-2 dark:border-slate-800">
@@ -292,7 +292,7 @@ const Detection = () => {
                                         <span className="flex shrink-0 items-center gap-1 font-mono text-[10px] text-slate-500"><TimerReset size={13}/>{jobAge}s</span>
                                     </div>
                                     <div className="mt-2 flex items-center justify-between gap-3 text-[9px] text-slate-500">
-                                        <span>Category: <b className="capitalize text-slate-700 dark:text-slate-200">{labelCategory(category)}</b></span>
+                                        <span>Category: <b className="text-slate-700 dark:text-slate-200">{labelCategory(category)}</b></span>
                                         <button type="button" onClick={() => cancelCurrentJob().catch((err) => setError(err.message || 'Cancel failed.'))} className="inline-flex items-center gap-1 font-semibold text-rose-500 hover:text-rose-600"><XCircle size={12}/> Cancel</button>
                                     </div>
                                 </div>
@@ -349,7 +349,7 @@ const Detection = () => {
                     )}
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3">
-                        <Card><span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Category status</span><div className="mt-2"><Badge variant="info">ACCEPTED</Badge></div><p className="mt-2 text-[10px] text-slate-400">Selected: <b className="capitalize">{labelCategory(category)}</b>{result.predictedCategory ? ` · Validator: ${labelCategory(result.predictedCategory)}` : ''}</p></Card>
+                        <Card><span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Category status</span><div className="mt-2"><Badge variant="info">ACCEPTED</Badge></div><p className="mt-2 text-[10px] text-slate-400">Selected: <b>{labelCategory(category)}</b>{result.predictedCategory ? ` · Validator: ${labelCategory(result.predictedCategory)}` : ''}</p></Card>
                         <Card><span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Anomaly decision</span><b className={`mt-2 block text-lg ${anomalyTone}`}>{result.prediction}</b><p className="mt-2 text-[10px] text-slate-400">Separate from category confidence</p></Card>
                         <Card><span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Evidence score</span><b className={`mt-2 block font-mono text-lg ${anomalyTone}`}>{result.anomalyScore.toFixed(3)}</b><p className="mt-2 text-[10px] text-slate-400">Primary decision score</p></Card>
                         <Card><span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Input quality</span><b className="mt-2 block text-sm capitalize">{result.imageQualityState || 'ok'}</b><p className="mt-2 text-[10px] text-slate-400">{result.imageQualityState === 'warning' ? 'Quality caution recorded' : 'Quality checks passed'}</p></Card>
@@ -569,8 +569,8 @@ const Detection = () => {
                     </h4>
                     <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">{result?.notes}</p>
                     <div className="mt-5 grid grid-cols-2 gap-3 text-left text-xs">
-                        <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800"><span className="block text-[10px] uppercase text-slate-400">Selected</span><b className="capitalize">{labelCategory(category)}</b></div>
-                        <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800"><span className="block text-[10px] uppercase text-slate-400">Closest supported</span><b className="capitalize">{poorQualityInput ? 'not evaluated' : labelCategory(result?.predictedCategory)}</b></div>
+                        <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800"><span className="block text-[10px] uppercase text-slate-400">Selected</span><b>{labelCategory(category)}</b></div>
+                        <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800"><span className="block text-[10px] uppercase text-slate-400">Closest supported</span><b>{poorQualityInput ? 'not evaluated' : labelCategory(result?.predictedCategory)}</b></div>
                     </div>
                     <p className="mt-4 text-[11px] leading-relaxed text-slate-400">For a hard mismatch or unsupported image, the production worker stops before the wrong category specialists are allowed to produce an accepted heatmap.</p>
                 </div>

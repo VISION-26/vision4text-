@@ -93,8 +93,8 @@ const CategoryExampleGuide = ({ category, onSelectFile }) => {
                 <div className="flex min-w-0 items-center gap-2">
                     <ImageIcon size={14} className="shrink-0 text-cyan-500" />
                     <div>
-                        <div className="text-[10px] font-black uppercase tracking-[.12em] text-slate-600 dark:text-slate-300">
-                            Real dataset samples · {displayCategory(category)}
+                        <div className="text-[11px] font-bold text-slate-700 dark:text-slate-200">
+                            Real dataset samples · <span className="font-extrabold text-cyan-600 dark:text-cyan-400">{displayCategory(category)}</span>
                         </div>
                         <div className="mt-0.5 text-[9px] text-slate-500">One GOOD and one BAD image from the stored MVTec AD sample set.</div>
                     </div>

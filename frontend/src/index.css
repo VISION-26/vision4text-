@@ -75,7 +75,7 @@
   .evt-inspection-dot.is-live { animation: evt-status-pulse 1.6s ease-out infinite; }
 
   .evt-inspection-category {
-    @apply rounded-full bg-slate-100 px-2 py-1 capitalize text-slate-600 dark:bg-white/5 dark:text-slate-300;
+    @apply rounded-full bg-slate-100 px-2 py-1 text-slate-600 dark:bg-white/5 dark:text-slate-300;
   }
 
   .evt-inspection-viewport {
