@@ -14,13 +14,13 @@ const InspectionResultViewer = ({
 
     if (!result) return null;
 
-    const isRealCamera = result.yoloRoiState === 'isolated_real_camera' ||
+    const isIsolated = result.yoloRoiState === 'isolated_real_camera' ||
         (result.notes && result.notes.includes('isolated')) ||
         (result.originalImage && result.preprocessedImage && result.originalImage !== result.preprocessedImage);
 
     return (
         <div className={`space-y-6 ${className}`}>
-            {isRealCamera && (
+            {isIsolated && (
                 <div className="rounded-xl border border-cyan-500/30 bg-gradient-to-r from-cyan-950/40 via-slate-900/60 to-purple-950/40 p-4 text-xs backdrop-blur">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2.5">
@@ -29,13 +29,13 @@ const InspectionResultViewer = ({
                             </div>
                             <div>
                                 <h4 className="font-semibold text-white flex items-center gap-2">
-                                    Real-World Camera Pipeline Applied
+                                    Input Isolation Pipeline Applied
                                     <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-[10px] font-mono text-cyan-300 border border-cyan-500/30">
                                         Auto-Isolated
                                     </span>
                                 </h4>
                                 <p className="text-slate-400 text-[11px] mt-0.5">
-                                    Background table disturbance, shadows, and room glare were neutralized before passing to EfficientAD & PatchCore.
+                                    Background disturbance, shadows, and reflections were neutralized before passing to EfficientAD & PatchCore.
                                 </p>
                             </div>
                         </div>
@@ -45,7 +45,7 @@ const InspectionResultViewer = ({
                                 onClick={() => setViewMode('source')}
                                 className={`px-2.5 py-1 rounded text-xs font-medium transition-all ${viewMode === 'source' ? 'bg-cyan-500 text-slate-950 font-semibold' : 'text-slate-400 hover:text-white'}`}
                             >
-                                Raw Camera
+                                Original Input
                             </button>
                             <button
                                 onClick={() => setViewMode('isolated')}
@@ -66,12 +66,12 @@ const InspectionResultViewer = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Card
-                    title={viewMode === 'source' ? 'Raw Camera Source' : isRealCamera ? 'Isolated Model ROI' : 'Original Image'}
-                    subtitle={viewMode === 'source' ? 'Unprocessed photo from device' : isRealCamera ? 'Background-neutralized 256×256 input' : 'Uploaded/captured source'}
+                    title={viewMode === 'source' ? 'Original Input Source' : isIsolated ? 'Isolated Model ROI' : 'Original Image'}
+                    subtitle={viewMode === 'source' ? 'Unprocessed photo from source' : isIsolated ? 'Background-neutralized 256×256 input' : 'Uploaded source image'}
                     padding={false}
                 >
                     <div className="aspect-[4/3] w-full bg-[#010120] flex items-center justify-center overflow-hidden border-t border-slate-100 dark:border-slate-800 relative group">
-                        {viewMode === 'split' && isRealCamera ? (
+                        {viewMode === 'split' && isIsolated ? (
                             <div className="grid grid-cols-2 w-full h-full">
                                 <div className="relative border-r border-slate-800 flex items-center justify-center overflow-hidden bg-black/40">
                                     <img src={result.originalImage} alt="Raw source" className="max-w-full max-h-full object-contain" />
@@ -89,12 +89,12 @@ const InspectionResultViewer = ({
                                 className="max-w-full max-h-full object-contain transition-transform duration-200"
                             />
                         )}
-                        {isRealCamera && viewMode !== 'split' && (
+                        {isIsolated && viewMode !== 'split' && (
                             <button
                                 onClick={() => setViewMode((prev) => prev === 'source' ? 'isolated' : 'source')}
                                 className="absolute bottom-2 right-2 rounded-lg bg-black/80 border border-slate-700 px-2 py-1 text-[10px] text-cyan-300 hover:text-white backdrop-blur transition-colors opacity-80 hover:opacity-100"
                             >
-                                {viewMode === 'source' ? 'Switch to Isolated ROI →' : '← Show Raw Camera'}
+                                {viewMode === 'source' ? 'Switch to Isolated ROI →' : '← Show Original Input'}
                             </button>
                         )}
                     </div>

@@ -258,9 +258,19 @@ export const DetectionProvider = ({ children }) => {
             setHistory((items) => { items.forEach(revokeRecordAssets); return []; });
             setHistoryTotal(0);
         });
-        const timer = window.setInterval(() => { loadJobs(); }, 5000);
+    }, [load, user?.id]);
+
+    // Poll background jobs ONLY when there are active/pending jobs in progress.
+    // This allows the Modal web container to scale to zero when idle instead of being kept awake forever.
+    useEffect(() => {
+        const hasActiveJobs = jobs.some((job) => ['queued', 'starting', 'running'].includes(job.status));
+        if (!hasActiveJobs) return undefined;
+
+        const timer = window.setInterval(() => {
+            loadJobs();
+        }, 5000);
         return () => window.clearInterval(timer);
-    }, [load, loadJobs, user?.id]);
+    }, [jobs, loadJobs]);
 
     const loadOlderHistory = useCallback(async () => {
         if (history.length >= historyTotal) return [];

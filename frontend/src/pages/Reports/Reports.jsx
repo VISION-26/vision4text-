@@ -208,7 +208,7 @@ const Reports = () => {
                         {(jobs || []).filter((job) => ['queued','starting','running'].includes(job.status)).slice(0,6).map((job) => (
                             <div key={job.id} className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-3 text-xs dark:border-violet-900/40 dark:bg-violet-950/20">
                                 <div className="flex items-center justify-between gap-2"><b>Scan #{job.id}</b><Badge variant="info">{job.status.toUpperCase()}</Badge></div>
-                                <p className="mt-2 capitalize text-slate-500">{String(job.category || '').replace('_',' ')}</p>
+                                <p className="mt-2 text-slate-500 font-medium">{displayCategory(job.category)}</p>
                                 <p className="mt-1 text-[9px] text-slate-400">A report becomes available when the inspection reaches a terminal result.</p>
                             </div>
                         ))}

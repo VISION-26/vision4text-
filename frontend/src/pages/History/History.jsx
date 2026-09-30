@@ -107,7 +107,7 @@ const History = () => {
             {activeJobs.length > 0 && (
                 <Card title="Inspections in progress" subtitle="These scans have been submitted but do not have a completed detection record yet.">
                     <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                        {activeJobs.map((job) => <div key={job.id} className="rounded-lg border border-violet-200 bg-violet-50 p-3 text-xs dark:border-violet-900/40 dark:bg-violet-950/20"><div className="flex items-center justify-between gap-2"><b>Scan #{job.id}</b><Badge variant="info">{job.status.toUpperCase()}</Badge></div><p className="mt-2 capitalize text-slate-500">{String(job.category || '').replace('_',' ')}</p></div>)}
+                        {activeJobs.map((job) => <div key={job.id} className="rounded-lg border border-violet-200 bg-violet-50 p-3 text-xs dark:border-violet-900/40 dark:bg-violet-950/20"><div className="flex items-center justify-between gap-2"><b>Scan #{job.id}</b><Badge variant="info">{job.status.toUpperCase()}</Badge></div><p className="mt-2 text-slate-500 font-medium">{displayCategory(job.category)}</p></div>)}
                     </div>
                 </Card>
             )}
@@ -119,7 +119,7 @@ const History = () => {
             <Card>
                 <div className="grid gap-3 xl:grid-cols-[1.5fr_.55fr_.65fr_auto]">
                     <div className="relative"><Search size={18} className="absolute left-3 top-3 text-slate-400"/><input value={searchTerm} onChange={(e) => updateSearch(e.target.value)} placeholder="Search file, decision, category or rejection…" className="w-full pl-10 pr-4 py-2.5 text-xs rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-together-night/40 focus:outline-none"/></div>
-                    <select value={categoryFilter} onChange={(e) => { setCategoryFilter(e.target.value); setCurrentPage(1); }} className="rounded-md border border-slate-200 bg-white px-3 py-2.5 text-xs dark:border-slate-800 dark:bg-together-night/40"><option value="all">All categories</option>{categories.map((cat) => <option key={cat} value={cat}>{cat.replace('_',' ')}</option>)}</select>
+                    <select value={categoryFilter} onChange={(e) => { setCategoryFilter(e.target.value); setCurrentPage(1); }} className="rounded-md border border-slate-200 bg-white px-3 py-2.5 text-xs dark:border-slate-800 dark:bg-together-night/40"><option value="all">All categories</option>{categories.map((cat) => <option key={cat} value={cat}>{displayCategory(cat)}</option>)}</select>
                     <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }} className="rounded-md border border-slate-200 bg-white px-3 py-2.5 text-xs dark:border-slate-800 dark:bg-together-night/40"><option value="all">All decisions</option><option value="NORMAL">Normal</option><option value="ANOMALOUS">Anomalous</option><option value="INPUT REJECTED">Input rejected</option><option value="NOT VALID">Not valid</option></select>
                     <div className="flex flex-wrap gap-1 text-[10px] font-bold">{[["timestamp","Date"],["anomalyScore","Score"],["inferenceTime","CPU"]].map(([field,label]) => <button key={field} onClick={() => handleSort(field)} className={`flex items-center gap-1 px-2.5 py-2 border rounded-md ${sortField === field ? 'border-together-magenta text-together-magenta' : 'border-slate-200 dark:border-slate-800 text-slate-500'}`}>{label}{sortField === field && <ArrowUpDown size={11}/>}</button>)}</div>
                 </div>

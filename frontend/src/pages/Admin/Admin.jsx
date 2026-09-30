@@ -6,6 +6,7 @@ import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
 import SectionTitle from '../../components/common/SectionTitle';
 import Table from '../../components/common/Table';
+import { displayCategory } from '../../constants/categoryLabels';
 
 const Admin = () => {
     const [users, setUsers] = useState([]);
@@ -136,7 +137,7 @@ const Admin = () => {
                         <div className="rounded-lg border border-violet-200 bg-violet-50 p-3 dark:border-violet-900/40 dark:bg-violet-950/20"><span className="text-slate-400">Active</span><b className="mt-1 block text-2xl">{activeJobs.length}</b></div>
                         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/40 dark:bg-amber-950/20"><span className="text-slate-400">Failed / timed out</span><b className="mt-1 block text-2xl">{failedJobs.length}</b></div>
                     </div>
-                    <div className="mt-3 space-y-2">{jobs.slice(0,5).map((job) => <div key={job.job_id} className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 text-[10px] dark:border-slate-800"><span>Scan #{job.job_id} · <span className="capitalize">{String(job.category || '').replace('_',' ')}</span></span><Badge variant={['failed','timed_out'].includes(job.status) ? 'warning' : ['queued','starting','running'].includes(job.status) ? 'info' : 'success'}>{String(job.status).replace('_',' ').toUpperCase()}</Badge></div>)}</div>
+                    <div className="mt-3 space-y-2">{jobs.slice(0,5).map((job) => <div key={job.job_id} className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 text-[10px] dark:border-slate-800"><span>Scan #{job.job_id} · <span className="font-semibold">{displayCategory(job.category)}</span></span><Badge variant={['failed','timed_out'].includes(job.status) ? 'warning' : ['queued','starting','running'].includes(job.status) ? 'info' : 'success'}>{String(job.status).replace('_',' ').toUpperCase()}</Badge></div>)}</div>
                 </Card>
                 <Card title="Backup & Recovery" subtitle="The database backup is created from a consistent SQLite snapshot.">
                     <p className="text-xs leading-5 text-slate-500">Use the backup before major schema changes or final submission. Visual evidence files remain exportable per inspection through the signed Evidence ZIP.</p>
