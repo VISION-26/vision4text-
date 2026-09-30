@@ -3,15 +3,15 @@ import { displayCategory } from '../../constants/categoryLabels';
 import { ChevronDown, ChevronUp, Image as ImageIcon, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 export const CATEGORY_GUIDANCE = {
-    bottle: { title: 'Top View of Bottle', framing: 'Inspect one bottle from the top view, centered with the cap/mouth clearly visible against a plain background.', defect: 'Crack, dent, contamination, broken edge, or unusual surface region.' },
-    cable: { title: 'Cable', framing: 'Place one cable segment clearly inside the frame. Keep bends visible and avoid hands covering the cable.', defect: 'Cut, exposed region, damaged insulation, irregular bend, or foreign material.' },
-    capsule: { title: 'Capsule', framing: 'Center one capsule at a time, large enough to fill the central area without cropping either end.', defect: 'Crack, deformation, dent, contamination, split shell, or surface mark.' },
+    bottle: { title: 'Top View Of Bottle', framing: 'Inspect one bottle from the top view, centered with the cap/mouth clearly visible against a plain background.', defect: 'Crack, dent, contamination, broken edge, or unusual surface region.' },
+    cable: { title: 'Top View Of Cable', framing: 'Place one cable segment clearly inside the frame. Keep bends visible and avoid hands covering the cable.', defect: 'Cut, exposed region, damaged insulation, irregular bend, or foreign material.' },
+    capsule: { title: 'Top View Of Capsule', framing: 'Center one capsule at a time, large enough to fill the central area without cropping either end.', defect: 'Crack, deformation, dent, contamination, split shell, or surface mark.' },
     carpet: { title: 'Carpet', framing: 'Position flat carpet region with even lighting and consistent texture across the frame.', defect: 'Hole, cut, contamination, damaged fiber, or local texture change.' },
     grid: { title: 'Grid', framing: 'Keep the grid plane parallel to the view so the repeating pattern is visible across most of the frame.', defect: 'Broken line, bent cell, missing structure, contamination, or distorted pattern.' },
     hazelnut: { title: 'Hazelnut', framing: 'Use one hazelnut, centered and fully visible, with a simple background and minimal shadow.', defect: 'Crack, hole, shell damage, contamination, or abnormal shape.' },
     leather: { title: 'Leather', framing: 'Inspect flat leather surface with texture visible and without folds hiding the inspected region.', defect: 'Cut, scratch, hole, discoloration, contamination, or abnormal texture.' },
-    metal_nut: { title: 'Metal Nut', framing: 'Center one metal nut, show the complete outer edge and inner hole, and minimize strong reflections.', defect: 'Scratch, dent, chip, deformation, damaged edge, or contamination.' },
-    pill: { title: 'Pill', framing: 'Place one pill/tablet at a time with its whole outline visible and enough scale to show surface details.', defect: 'Crack, chip, dent, contamination, broken edge, or abnormal shape.' },
+    metal_nut: { title: 'Top View Of Metal Nut', framing: 'Center one metal nut, show the complete outer edge and inner hole, and minimize strong reflections.', defect: 'Scratch, dent, chip, deformation, damaged edge, or contamination.' },
+    pill: { title: 'Top View Of Pill', framing: 'Place one pill/tablet at a time with its whole outline visible and enough scale to show surface details.', defect: 'Crack, chip, dent, contamination, broken edge, or abnormal shape.' },
     screw: { title: 'Screw', framing: 'Show one screw from head to tip. Keep threads visible and avoid cropping the shaft.', defect: 'Damaged thread, bent shaft, deformed head, scratch, or missing material.' },
     tile: { title: 'Tile', framing: 'Inspect flat tile face with the full inspected surface visible and close to perpendicular.', defect: 'Crack, chip, glaze defect, contamination, or abnormal texture.' },
     toothbrush: { title: 'Toothbrush', framing: 'Show the toothbrush head, bristles, neck, and enough handle to identify the complete product.', defect: 'Missing/bent bristle, deformed head, damaged handle, or contamination.' },
