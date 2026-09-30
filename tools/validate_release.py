@@ -148,13 +148,85 @@ require("/backup/database" in admin and "source.backup" in admin, "consistent SQ
 for page in ("Dashboard", "Detection", "Reports", "History", "Settings", "Admin", "Login"):
     candidates = list((ROOT / "frontend/src/pages").glob(f"{page}/{page}.jsx")) + list((ROOT / "frontend/src/pages").glob(f"{page}.jsx"))
     require(bool(candidates), f"required original page missing: {page}")
-require((ROOT / "frontend/src/components/detection/CameraCapture.jsx").is_file(), "camera capture component missing")
-require("CameraCapture" in detection_ui, "camera capture must remain connected to Detection workflow")
+# Upload-only inspection invariants (camera capture intentionally removed).
+require(
+    not (ROOT / "frontend/src/components/detection/CameraCapture.jsx").is_file(),
+    "CameraCapture.jsx must not exist in upload-only production design",
+)
+require(
+    "CameraCapture" not in detection_ui,
+    "Detection.jsx must not import or reference CameraCapture",
+)
+
+# Active inspection UI must not contain web camera capture APIs
+active_detection_sources = [
+    detection_ui,
+    text("frontend/src/components/detection/InspectionResultViewer.jsx"),
+    text("frontend/src/components/detection/CategoryExampleGuide.jsx"),
+]
+for src in active_detection_sources:
+    require(
+        "getUserMedia" not in src,
+        "active inspection UI must not contain getUserMedia",
+    )
+    require(
+        "navigator.mediaDevices" not in src,
+        "active inspection UI must not contain navigator.mediaDevices",
+    )
+
+# Normal image-upload inspection flow must remain connected
+require(
+    "useDropzone" in detection_ui or "getInputProps" in detection_ui,
+    "image upload dropzone input missing from Detection UI",
+)
+require(
+    "selectImage" in detection_ui and "runDetection" in detection_ui,
+    "image selection and inspection execution flow must remain connected",
+)
+
+# Production category invariants: verify against authoritative backend configurations
+EXPECTED_PRODUCTION_CATEGORIES = {
+    "bottle",
+    "metal_nut",
+    "cable",
+    "capsule",
+    "pill",
+}
+
+config_content = (ROOT / "backend/app/core/config.py").read_text(encoding="utf-8")
+config_tree = ast.parse(config_content)
+config_supported = None
+for node in ast.walk(config_tree):
+    if isinstance(node, ast.AnnAssign) and getattr(node.target, "id", None) == "SUPPORTED_CATEGORIES":
+        if isinstance(node.value, ast.Set):
+            config_supported = {elt.value for elt in node.value.elts if isinstance(elt, ast.Constant)}
+
+worker_content = (ROOT / "backend/app/services/evtclip_worker.py").read_text(encoding="utf-8")
+worker_tree = ast.parse(worker_content)
+worker_categories = None
+for node in ast.walk(worker_tree):
+    if isinstance(node, ast.Assign):
+        for target in node.targets:
+            if getattr(target, "id", None) == "CATEGORIES":
+                if isinstance(node.value, (ast.Tuple, ast.List, ast.Set)):
+                    worker_categories = {elt.value for elt in node.value.elts if isinstance(elt, ast.Constant)}
+
+require(
+    config_supported == EXPECTED_PRODUCTION_CATEGORIES,
+    f"backend config SUPPORTED_CATEGORIES mismatch: expected {sorted(EXPECTED_PRODUCTION_CATEGORIES)}, got {sorted(config_supported) if config_supported else None}",
+)
+require(
+    worker_categories == EXPECTED_PRODUCTION_CATEGORIES,
+    f"backend worker CATEGORIES mismatch: expected {sorted(EXPECTED_PRODUCTION_CATEGORIES)}, got {sorted(worker_categories) if worker_categories else None}",
+)
+
 category_guide = text("frontend/src/components/detection/CategoryExampleGuide.jsx")
 routes_ui = text("frontend/src/routes/index.jsx")
 sidebar_ui = text("frontend/src/components/layout/Sidebar.jsx")
-for category in ("bottle", "cable", "capsule", "carpet", "grid", "hazelnut", "leather", "metal_nut", "pill", "screw", "tile", "toothbrush", "transistor", "wood", "zipper"):
-    require(category in category_guide, f"missing upload-example guidance for category: {category}")
+
+for category in EXPECTED_PRODUCTION_CATEGORIES:
+    require(category in category_guide, f"missing upload-example guidance for production category: {category}")
+
 require("CategoryExampleGuide" in detection_ui and "supported_categories" in detection_ui, "dynamic category example/registry integration missing")
 require("/datasets" not in routes_ui and "/research" not in routes_ui and "/medical-research" not in routes_ui, "removed research/data routes returned")
 require("Research & Data" not in sidebar_ui and "Research Evidence" not in sidebar_ui and "Medical Research" not in sidebar_ui and "Datasets" not in sidebar_ui, "removed research/data navigation returned")
