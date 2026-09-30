@@ -184,7 +184,7 @@ const Reports = () => {
                             <div><dt className="text-slate-400">Bounding box</dt><dd className="font-mono font-bold mt-1">{selectedReport.defectBbox ? `x=${selectedReport.defectBbox.x}, y=${selectedReport.defectBbox.y}, w=${selectedReport.defectBbox.width}, h=${selectedReport.defectBbox.height}` : 'none'}</dd></div>
                         </dl>
                     </Card>
-                    <Card title="Measured Worker Timing" subtitle="Actual backend timings captured for this scan">
+                    <Card title="Measured Worker Timing" subtitle="Actual backend timings recorded for this scan">
                         <div className="grid grid-cols-2 gap-3 text-xs">
                             {[['Input validation', selectedReport.validationSeconds], ['EfficientAD', selectedReport.efficientadSeconds], ['PatchCore', selectedReport.patchcoreSeconds], ['EVT-CLIP refiner', selectedReport.refinerSeconds]].map(([label, value]) => (
                                 <div key={label} className="p-3 rounded-md bg-slate-50 dark:bg-[#08152e]"><span className="block text-[10px] text-slate-400">{label}</span><b className="font-mono">{Number(value || 0).toFixed(3)} s</b></div>

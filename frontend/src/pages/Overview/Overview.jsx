@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 
 const stages = [
-    { number: '01', name: 'Input', detail: 'Upload an image', accent: '#0891b2' },
+    { number: '01', name: 'Input', detail: 'Upload image', accent: '#0891b2' },
     { number: '02', name: 'Validate', detail: 'Quality + category', accent: '#8b5cf6' },
     { number: '03', name: 'Inspect', detail: 'EfficientAD + PatchCore', accent: '#ef2cc1' },
     { number: '04', name: 'Fuse', detail: 'Calibrated Stage-2', accent: '#fc4c02' },
@@ -34,7 +34,7 @@ const story = [
 ];
 
 const flowSteps = [
-    ['01', 'Choose input', 'Upload an inspection image.'],
+    ['01', 'Choose input', 'Upload one inspection image with the selected product category.'],
     ['02', 'Select category', 'Choose one of the product profiles currently available in the active model registry.'],
     ['03', 'Run inspection', 'The CPU worker executes the specialist and refinement pipeline.'],
     ['04', 'Inspect evidence', 'Compare the final result with each stored model-stage output.'],
@@ -44,6 +44,11 @@ const flowSteps = [
 const Overview = () => {
     const [health, setHealth] = useState({ status: 'checking', supported_categories: fallbackCategories });
     const reduceMotion = useReducedMotion();
+
+    useEffect(() => {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+    }, []);
 
     useEffect(() => {
         let active = true;
