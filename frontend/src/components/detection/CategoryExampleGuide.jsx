@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { displayCategory } from '../../constants/categoryLabels';
 import { ChevronDown, ChevronUp, Image as ImageIcon, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 export const CATEGORY_GUIDANCE = {
@@ -93,7 +94,7 @@ const CategoryExampleGuide = ({ category, onSelectFile }) => {
                     <ImageIcon size={14} className="shrink-0 text-cyan-500" />
                     <div>
                         <div className="text-[10px] font-black uppercase tracking-[.12em] text-slate-600 dark:text-slate-300">
-                            Real dataset samples · {guide.title}
+                            Real dataset samples · {displayCategory(category)}
                         </div>
                         <div className="mt-0.5 text-[9px] text-slate-500">One GOOD and one BAD image from the stored MVTec AD sample set.</div>
                     </div>

@@ -4,6 +4,7 @@ import useAuth from '../../hooks/useAuth';
 import { DetectionContext } from '../../context/DetectionContext';
 import { Bell, Search, ChevronDown, User, Shield, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import Breadcrumb from './Breadcrumb';
+import { displayCategory } from '../../constants/categoryLabels';
 
 const Navbar = () => {
     const { user } = useAuth();
@@ -15,7 +16,7 @@ const Navbar = () => {
 
     const notifications = useMemo(() => history.slice(0, 6).map((item) => ({
         id: item.id,
-        text: `${item.prediction} · ${item.category.replace('_', ' ')} · ${item.imageName}`,
+        text: `${item.prediction} · ${displayCategory(item.category)} · ${item.imageName}`,
         type: !item.resultValid || item.rejectionCode ? 'warning' : (item.prediction === 'Anomalous' ? 'error' : 'ok'),
     })), [history]);
 

@@ -7,6 +7,7 @@ import SectionTitle from '../../components/common/SectionTitle';
 import Badge from '../../components/common/Badge';
 import Table from '../../components/common/Table';
 import { Search, ArrowUpDown, Trash2, Eye, ChevronLeft, ChevronRight, RefreshCw, Calendar, Image as ImageIcon, FileText } from 'lucide-react';
+import { displayCategory } from '../../constants/categoryLabels';
 
 const statusFor = (row) => {
     if (row.prediction === 'Invalid Input' || row.rejectionCode) return { text: 'INPUT REJECTED', variant: 'warning' };
@@ -87,7 +88,7 @@ const History = () => {
     const columns = [
         { key: 'timestamp', header: 'Inspection Date', render: (row) => <div className="flex items-center gap-2"><Calendar size={13} className="text-slate-400"/><span className="font-mono text-[10px] text-slate-400">{row.timestamp}</span></div> },
         { key: 'imageName', header: 'Image', render: (row) => <div className="flex items-center gap-3"><div className="w-10 h-8 rounded bg-together-night flex items-center justify-center border border-slate-200 dark:border-slate-800"><ImageIcon size={14} className="text-slate-500"/></div><span className="font-semibold text-xs truncate max-w-44">{row.imageName}</span></div> },
-        { key: 'category', header: 'Selected / Detected', render: (row) => <div className="text-[11px]"><span className="capitalize font-semibold">{row.category?.replace('_', ' ')}</span>{row.predictedCategory && row.predictedCategory !== row.category && <span className="block text-amber-500 capitalize">→ {row.predictedCategory.replace('_', ' ')}</span>}</div> },
+        { key: 'category', header: 'Selected / Detected', render: (row) => <div className="text-[11px]"><span className="font-semibold">{displayCategory(row.category)}</span>{row.predictedCategory && row.predictedCategory !== row.category && <span className="block text-amber-500">→ {displayCategory(row.predictedCategory)}</span>}</div> },
         { key: 'anomalyScore', header: 'Score', render: (row) => <span className="font-mono text-xs font-bold">{Number(row.anomalyScore || 0).toFixed(3)}</span> },
         { key: 'prediction', header: 'Decision', render: (row) => { const state = statusFor(row); return <div><Badge variant={state.variant}>{state.text}</Badge>{row.rejectionCode && <span className="block text-[9px] text-slate-400 mt-1">{row.rejectionCode.replaceAll('_', ' ')}</span>}</div>; } },
         { key: 'inferenceTime', header: 'CPU Time', render: (row) => <div className="font-mono text-[10px]"><span>{Number(row.inferenceSeconds || (row.inferenceTime || 0) / 1000).toFixed(2)} s</span>{row.workerCache && <span className="block text-slate-400">{row.workerCache}</span>}{row.imageQualityState && row.imageQualityState !== 'ok' && <span className="block text-amber-500">quality: {row.imageQualityState}</span>}</div> },

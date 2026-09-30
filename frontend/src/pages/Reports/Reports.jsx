@@ -10,6 +10,7 @@ import {
     Search, Trash2, ArrowLeft, AlertTriangle, User, Calendar, Cpu, Activity,
     ShieldCheck, Archive, Loader2, Image as ImageIcon, Ban
 } from 'lucide-react';
+import { displayCategory } from '../../constants/categoryLabels';
 
 const reportStatus = (report) => {
     if (report.prediction === 'Invalid Input' || report.rejectionCode) return { label: 'INPUT REJECTED', variant: 'warning', invalid: true };
@@ -167,8 +168,8 @@ const Reports = () => {
                         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 text-xs">
                             <div><dt className="text-slate-400">Anomaly score</dt><dd className="font-mono font-bold mt-1">{Number(selectedReport.anomalyScore || 0).toFixed(4)}</dd></div>
                             <div><dt className="text-slate-400">Confidence</dt><dd className="font-mono font-bold mt-1">{(Number(selectedReport.confidence || 0) * 100).toFixed(1)}%</dd></div>
-                            <div><dt className="text-slate-400">Selected category</dt><dd className="font-bold mt-1 capitalize">{selectedReport.category?.replace('_', ' ')}</dd></div>
-                            <div><dt className="text-slate-400">Predicted category</dt><dd className="font-bold mt-1 capitalize">{selectedReport.predictedCategory?.replace('_', ' ') || 'not available'}</dd></div>
+                            <div><dt className="text-slate-400">Selected category</dt><dd className="font-bold mt-1">{displayCategory(selectedReport.category)}</dd></div>
+                            <div><dt className="text-slate-400">Predicted category</dt><dd className="font-bold mt-1">{selectedReport.predictedCategory ? displayCategory(selectedReport.predictedCategory) : 'not available'}</dd></div>
                             <div><dt className="text-slate-400">Category validator</dt><dd className="font-bold mt-1 break-all">{selectedReport.categoryValidator || 'not available'}</dd></div>
                             <div><dt className="text-slate-400">Rejection code</dt><dd className="font-bold mt-1">{selectedReport.rejectionCode || 'none'}</dd></div>
                             <div><dt className="text-slate-400">Image quality</dt><dd className="font-bold mt-1">{selectedReport.imageQualityState || 'not recorded'}</dd></div>
@@ -217,7 +218,7 @@ const Reports = () => {
             <Card>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="relative md:col-span-2"><Search size={17} className="absolute left-3 top-3 text-slate-400"/><input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search image, decision, category, rejection…" className="w-full pl-10 pr-4 py-2.5 text-xs rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-together-night/40 focus:outline-none" /></div>
-                    <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="px-3 py-2.5 text-xs rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-together-night/40"><option value="all">All trained categories</option>{categories.map((cat) => <option key={cat} value={cat}>{cat.replace('_', ' ')}</option>)}</select>
+                    <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="px-3 py-2.5 text-xs rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-together-night/40"><option value="all">All trained categories</option>{categories.map((cat) => <option key={cat} value={cat}>{displayCategory(cat)}</option>)}</select>
                 </div>
             </Card>
 
@@ -235,7 +236,7 @@ const Reports = () => {
                                     <div className="p-5 space-y-3">
                                         <div className="flex items-center justify-between gap-3"><span className="text-[10px] text-slate-400 font-mono">{rep.timestamp}</span><Badge variant={state.variant}>{state.label}</Badge></div>
                                         <h3 className="font-semibold text-sm truncate">{rep.imageName}</h3>
-                                        <div className="flex items-center justify-between text-[11px] text-slate-500"><span className="capitalize">{rep.category?.replace('_', ' ')}</span><span>{Number(rep.inferenceSeconds || 0).toFixed(2)} s CPU</span></div>
+                                        <div className="flex items-center justify-between text-[11px] text-slate-500"><span>{displayCategory(rep.category)}</span><span>{Number(rep.inferenceSeconds || 0).toFixed(2)} s CPU</span></div>
                                         {rep.rejectionCode && <p className="text-[10px] text-amber-600 dark:text-amber-400">Safety gate: {rep.rejectionCode.replaceAll('_', ' ')}</p>}
                                     </div>
                                 </button>

@@ -70,8 +70,9 @@ worker_image = (
     memory=32768,
     timeout=3600,
     startup_timeout=900,
+    min_containers=0,
     max_containers=1,
-    scaledown_window=1200,
+    scaledown_window=60,
     retries=1,
     enable_memory_snapshot=True,
     env={
@@ -142,8 +143,9 @@ class InferenceWorker:
     memory=4096,
     timeout=300,
     startup_timeout=180,
+    min_containers=0,
     max_containers=1,
-    scaledown_window=300,
+    scaledown_window=60,
     env={
         "ENVIRONMENT": "production",
         "DEBUG": "false",

@@ -6,8 +6,9 @@ import Button from '../../components/common/Button';
 import SectionTitle from '../../components/common/SectionTitle';
 import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
-import CameraCapture from '../../components/detection/CameraCapture';
 import InspectionRunAnimation from '../../components/detection/InspectionRunAnimation';
+import CategoryTopView from '../../components/detection/CategoryTopView';
+import { displayCategory as labelCategory } from '../../constants/categoryLabels';
 import CategoryExampleGuide, { CATEGORY_GUIDANCE } from '../../components/detection/CategoryExampleGuide';
 import InspectionResultViewer from '../../components/detection/InspectionResultViewer';
 import {
@@ -21,7 +22,6 @@ const fallbackSupportedCategories = ['bottle', 'cable', 'capsule', 'metal_nut', 
 const knownCategoryOrder = ['bottle', 'cable', 'capsule', 'carpet', 'grid', 'hazelnut', 'leather', 'metal_nut', 'pill', 'screw', 'tile', 'toothbrush', 'transistor', 'wood', 'zipper'];
 const CALIBRATED_THRESHOLD = 0.267;
 const legacyStage3Categories = ['bottle', 'cable', 'capsule', 'metal_nut', 'pill'];
-const labelCategory = (value) => (value || 'unknown').replace('_', ' ');
 const friendlyRoute = (value) => ({ stage3_stable: 'Stable Stage-3 refinement', stage2_fallback: 'Stage-2 fallback', specialist_only: 'Specialist-only route' }[value] || 'Recorded route');
 const friendlyCache = (value) => ({ cold_pair: 'First run · specialist pair loaded', warm_pair: 'Warm pair · models reused', partial_warm: 'Partially warm' }[value] || 'Runtime cache state');
 const friendlyDecisionSource = (value) => value?.includes('patchcore') ? 'PatchCore specialist decision' : value?.includes('efficientad') ? 'EfficientAD specialist decision' : value === 'localization_area_fallback' ? 'Localization fallback decision' : 'Recorded backend decision';
@@ -143,11 +143,6 @@ const Detection = () => {
         }
     };
 
-    const handleCameraCapture = async (file, inspectImmediately) => {
-        selectImage(file);
-        if (inspectImmediately) await execute(file, category);
-    };
-
     const handleReset = () => {
         if (imagePreview) URL.revokeObjectURL(imagePreview);
         setSelectedImage(null);
@@ -216,7 +211,7 @@ const Detection = () => {
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card title="1. Select Input Source" subtitle="Upload an image or capture one directly from the camera">
+                <Card title="1. Select Input Source" subtitle="Upload an image to begin inspection">
                     {imagePreview ? (
                         <div className="relative group overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-950 aspect-[4/3] flex items-center justify-center rounded-lg">
                             <img src={imagePreview} alt="Selected input" className="max-h-full max-w-full object-contain" />
@@ -244,9 +239,6 @@ const Detection = () => {
                             <div className="col-span-2 rounded-lg border border-slate-200 px-3 py-2 text-slate-500 dark:border-slate-800"><span className="font-semibold text-slate-700 dark:text-slate-200">Selected at</span> {imageMeta.selectedAt}</div>
                         </div>
                     )}
-                    <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
-                        <CameraCapture onCapture={handleCameraCapture} disabled={isRunning} />
-                    </div>
                 </Card>
 
                 <Card title="2. Inspection Configuration" subtitle="Select the trained product category; calibration stays model-controlled">
@@ -261,6 +253,7 @@ const Detection = () => {
                             </select>
                             <p className="pt-1 text-[9px] leading-4 text-slate-400">The list follows the model profiles reported by the active backend. Newly trained categories appear automatically after the backend registry is updated.</p>
                         </div>
+                        <CategoryTopView category={category} categories={supportedCategories} />
                         <CategoryExampleGuide category={category} onSelectFile={selectImage} />
                         <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-[#12122a]">
                             <div className="grid grid-cols-2 gap-2 text-[10px]">
@@ -402,7 +395,7 @@ const Detection = () => {
                         <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[10px] text-slate-400">
                             <span className="flex items-center gap-1.5"><GitBranch size={13}/> Stage-2 combines specialist localization.</span>
                             <span className="flex items-center gap-1.5"><BrainCircuit size={13}/> Stage-3 uses EVT-CLIP refinement when routing accepts it.</span>
-                            <span>Ground truth is not fabricated for ordinary uploads or camera images.</span>
+                            <span>Ground truth is not fabricated for uploaded inspection images.</span>
                         </div>
                     </Card>
 

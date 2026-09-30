@@ -431,6 +431,13 @@
     linear-gradient(90deg, rgba(189,187,255,.055) 1px, transparent 1px);
 }
 
+.evt-grid-light {
+  background-size: 42px 42px;
+  background-image:
+    linear-gradient(rgba(23,23,23,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(23,23,23,.045) 1px, transparent 1px);
+}
+
 @keyframes evt-overview-scan-keyframes {
   0% { transform: translate(-50%, -115%); opacity: 0; }
   15% { opacity: .9; }
@@ -740,8 +747,9 @@
 }
 .evt-overview-pipeline-node:hover {
   transform: translateY(-2px);
-  border-color: rgba(255,255,255,.18);
-  background: rgba(255,255,255,.045);
+  border-color: color-mix(in srgb, var(--stage-accent) 45%, #e7e3dc);
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(23, 23, 23, 0.06);
 }
 @keyframes evt-overview-trace {
   0% { left: -10%; opacity: 0; }

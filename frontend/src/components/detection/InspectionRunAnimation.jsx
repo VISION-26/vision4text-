@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { displayCategory } from '../../constants/categoryLabels';
 import {
     AlertTriangle,
     CheckCircle2,
@@ -72,7 +73,7 @@ const InspectionRunAnimation = ({
     // Keep a completed or rejected result visible until the operator changes or resets the input.
     // A timed transition back to the run screen made a completed inspection look like a loop.
     const view = isRunning ? 'running' : (completion ? 'complete' : 'idle');
-    const categoryLabel = (category || 'product').replace('_', ' ');
+    const categoryLabel = displayCategory(category || 'product');
 
     return (
         <div className="evt-inspection-shell" aria-live="polite">

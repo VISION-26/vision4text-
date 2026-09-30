@@ -13,6 +13,7 @@ import api from '../../services/api';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
+import { displayCategory } from '../../constants/categoryLabels';
 import ChartCard from '../../components/common/ChartCard';
 import SectionTitle from '../../components/common/SectionTitle';
 
@@ -79,7 +80,7 @@ const Dashboard = () => {
     })), [analytics, range]);
     const categoryData = useMemo(() => (analytics?.categories || []).map((row) => ({
         ...row,
-        name: String(row.category || 'unknown').replace('_', ' ').toUpperCase(),
+        name: displayCategory(row.category).toUpperCase(),
     })), [analytics]);
 
     const openReport = (id) => {
@@ -157,7 +158,7 @@ const Dashboard = () => {
                         <div className="space-y-2">
                             {activeJobs.slice(0, 4).map((job) => (
                                 <div key={job.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs dark:border-slate-800">
-                                    <div><b>Scan #{job.id}</b><span className="ml-2 capitalize text-slate-500">{String(job.category || '').replace('_', ' ')}</span></div>
+                                    <div><b>Scan #{job.id}</b><span className="ml-2 text-slate-500">{displayCategory(job.category)}</span></div>
                                     <div className="flex items-center gap-3"><Badge variant="info">{String(job.status).replace('_', ' ').toUpperCase()}</Badge><span className="font-mono text-[10px] text-slate-400">{ageOf(job)}s</span></div>
                                 </div>
                             ))}
@@ -227,7 +228,7 @@ const Dashboard = () => {
                                     <tr key={record.id} onClick={() => openReport(record.id)} className="cursor-pointer hover:bg-slate-50/70 dark:hover:bg-slate-800/20">
                                         <td className="py-3 px-5 font-mono text-[10px] text-slate-400">{record.timestamp}</td>
                                         <td className="py-3 px-5 font-semibold max-w-52 truncate">{record.imageName}</td>
-                                        <td className="py-3 px-5 capitalize text-slate-500">{record.category?.replace('_', ' ')}</td>
+                                        <td className="py-3 px-5 text-slate-500">{displayCategory(record.category)}</td>
                                         <td className="py-3 px-5 font-mono font-bold">{Number(record.anomalyScore || 0).toFixed(3)}</td>
                                         <td className="py-3 px-5"><Badge variant={state.variant}>{state.text}</Badge></td>
                                     </tr>
